@@ -23,7 +23,6 @@ typedef char VData_Type;
 #define DATA_HANDLER_CORE  1
 #define TRANSMIT_CORE      2
 
-
 //indict the location of each Elem_Data(data block) in a video stream
 #define FRONT_FOR_FIRST_NALU 1 
 #define MID_FOR_FIRST_NALU   2
@@ -39,7 +38,7 @@ typedef char VData_Type;
 
 
 //the bytes of control message bytes  in one packet 
-#define LEN_CONTRL_MSG 7
+#define LEN_CONTRL_MSG 15
 
 
 using namespace std;
@@ -51,26 +50,64 @@ struct Param_Reader {
 };
 
 //for a block 
-struct Elem_Data{
+struct Block_Data{
 //an order of S*K bytes data
-	VData_Type *data;
-	int size;
+	VData_Type **data;
+	int S_FEC;
+	int K_FEC;
+	int M_FEC;
+
+	int originBlk_size;
+
+	int block_id;
+	int *erasure;
+	int cnt_s;
+
+//	int size;
 	int id_path;
 	int id_nalu;
+
 	int id_seg;
 //specify sequence of nalus in a video segment,
 //the first, mid or the last nalu?
 	int type_location;
 	int type_nalu;
-	int S_FEC;
-	int K_FEC;
+
 //	int id_segment; 
 };
 
+struct Block_Decd{
+//an order of S*K bytes data
+	VData_Type *data_decd;
+	int S_FEC;
+	int K_FEC;
+	int M_FEC;
+	
+	int block_id;
+	int *erasure;
+	int cnt_s;
+
+	int len_remain_data;
+	int originBlk_size;
+	int id_path;
+	int id_nalu;
+
+	int id_seg;
+//specify sequence of nalus in a video segment,
+//the first, mid or the last nalu?
+//	int type_location;
+//	int type_nalu;
+
+//	int id_segment; 
+};
+
+
 class Data_Manager {
 public:	
-	vector<queue<shared_ptr<struct Elem_Data>>> data_video;
-//	vector< queue<struct Elem_Data *> > data_video;
+//	vector<queue<shared_ptr<VData_Type *>>> recv_data;
+	vector<queue<shared_pre<Block_Data *>>> recvQ_data;  
+//data alredy decoded	
+	vector<queue<shared_ptr<Block_Decd *>>> decdQ_data;
 
 	vector<VData_Type *> data_vec;
 //	vector<VData_Type *> data_vec;

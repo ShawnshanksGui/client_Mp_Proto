@@ -11,7 +11,7 @@
 #include "../include/timer.h"
 #include "../include/common.h"
 #include "../include/mySocket.h"
-#include "../include/encoder.h"
+#include "../include/Decoder.h"
 #include "../include/video_reader.h"
 #include "../include/data_manager.h"
 #include "../include/system_params.h"
@@ -21,7 +21,6 @@
 #include "../include/myUtility.h"
 #include "../include/bitrate_select.h"
 #include "../include/fec_param_adjustor.h"
-
 
 
 using namespace std;
@@ -37,69 +36,41 @@ double _bitrate[BITRATE_TYPE_NUM] = {50.0, 25.0, 10.0};
 
 
 int main(int argc, char **argv) {
-//specify which one is the current video segmentation 
-	int id_VSegment = 0;
-//initialize the terminal flag as no valid 
-	int terminalFlag = 0;
-//inttialize the start flag as no valid
-	int startFlag_one_timeSlice = 0;
 
 	Timer t;
 	Data_Manager data_manager;
 
+	Video_Reader video_writer;
 
-	FEC_Param_Adjuster fec_param_adj;
-	Bitrate_Selector bitrate_selector(_bitrate);
-	Path_Selector path_selector;
-	Video_Reader video_reader;
+	vector<Decoder> decoder(NUM_PATH);
+	vector<Transmitter> client(NUM_PATH);
 
-	vector<Encoder> encoder(NUM_PATH);
-	vector<Transmitter> server(NUM_PATH);
+	vector<thread> decoder_worker(NUM_PATH);
+	vector<thread> writer_worker(NUM_PATH);
 
-//	vector<thread> encoder_worker(NUM_PATH);
-	vector<thread> sender_worker(NUM_PATH);
+	client[0].transmitter_new(argv[1], argv[2], argv[3], argv[4]);
+	client[1].transmitter_new(argv[5], argv[6], argv[7], argv[8]);
+//	thread setTimer_worker(&Timer::setTimer_td_func, &t, 
+//		                   ref(startFlag_one_timeSlice), 
+//		                   ref(terminalFlag));	
 
-	server[0].transmitter_new(argv[1], argv[2], argv[3], argv[4]);
-	server[1].transmitter_new(argv[5], argv[6], argv[7], argv[8]);
-	thread setTimer_worker(&Timer::setTimer_td_func, &t, 
-		                   ref(startFlag_one_timeSlice), 
-		                   ref(terminalFlag));	
+	for(int i = 0; i < NUM_PATH; i++) {			
+		writer_worker[i]  = thread(&Transmitter::receive_td_func, 
+			                	   &client[i], i, ref(data_manager));
+		decoder_worker[i] = thread(&Decoder::Decoder_td_func,
+						 		   &(decoder[i]), i+2, ref(data_manager));
+	}
+	std::thread writeVideo_worker(&Video_Writer::video_writer_td_func,
+								  &video_writer, ref(data_manager));
 
-	while(1) {
-		//reset the key data struct
-//		Video_Reader video_reader;
-//		video_reader.reader_init();
-//		Data_Manager data_manager;
-
-		if(terminalFlag > 0) {break;}
-		if(startFlag_one_timeSlice > 0) {
-			//process the next video segment
-			id_VSegment++;
-			
-			fec_param_adj.setFEC_params(chan_inf, bitrate_selector, video_reader);
-			bitrate_selector.setBitrate(tile_num, chan_inf, video_reader);
-			path_selector.select_Path(chan_inf, video_reader);
-//create the threads required.
-			std::thread readVideo_worker(&Video_Reader::video_reader_td_func,
-										 &video_reader, ref(data_manager),
-								 		 id_VSegment);
-
-			for(int i = 0; i < NUM_PATH; i++) {
-//				encoder_worker[i] = thread(&Encoder::encoder_td_func,
-//								 		   &(encoder[i]), ref(data_manager));			
-				sender_worker[i]  = thread(&Transmitter::send_td_func, 
-					                	   &server[i], i, ref(data_manager));
-			}
-			//reap or recycle the threads created.	
-			readVideo_worker.join();	
-			for(int i = 0; i < NUM_PATH; i++) {
-//				encoder_worker[i].join();
-				sender_worker[i].join();
-			}	
-		}	
+	//reap or recycle the threads created.	
+	writeVideo_worker.join();
+	for(int i = 0; i < NUM_PATH; i++) {
+//		Decoder_worker[i].join();
+		writer_worker[i].join();
 	}
 
-	setTimer_worker.join();
+//	setTimer_worker.join();
 	return 0;
 
 }	

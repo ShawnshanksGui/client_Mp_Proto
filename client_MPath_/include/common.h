@@ -21,6 +21,9 @@
 #define  STOP                  0
 #define READY                  1
 
+#define GET  0 //Packet received successfully
+#define LOST 1 //Packet lost in  transmission
+
 //the amount of command parameters required 
 #define NUM_PARA               6
  
@@ -36,6 +39,9 @@
 
 #define MALLOC(type, size) ((type *)malloc(sizeof(type) * (size)))
 #define SAFE_FREE(a) {if (a != nullptr) free(a);}
+
+
+typedef unsigned char uchar;
 
 struct Channel_Inf {
 //packet loss rate estimated in realtime

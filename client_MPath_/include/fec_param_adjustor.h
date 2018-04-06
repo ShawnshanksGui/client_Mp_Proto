@@ -10,8 +10,6 @@
 //actually step_rate = 1/6, for coding conveniently
 #define STEP_RATE  FRAME_GOP/6
 
-typedef unsigned char uchar;
-
 class FEC_Param_Adjuster{
 public:
 	int avail_K[LEVEL_NUM];

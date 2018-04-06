@@ -16,30 +16,29 @@ using namespace std;
 //#define ENABLE_DEBUG_D_MAMAGER
 
 Data_Manager::
-Data_Manager(int max_size):data_video(NUM_PATH) {
+Data_Manager(int max_size):recvQ_data(NUM_PATH) {
 	for(int i = 0; i < NUM_PATH; i++) {
-		buf_size[i] = 0;
-		MAX_SIZE[i] = max_size;
+//		buf_size[i] = 0;
+//		MAX_SIZE[i] = max_size;
 	}
 }
 
 Data_Manager::
-Data_Manager():data_video(NUM_PATH) {
+Data_Manager():decdQ_data(NUM_PATH) {
 	for(int i = 0; i < NUM_PATH; i++) {
-		buf_size[i] = 0;
-		MAX_SIZE[i] = 1000;
+//		buf_size[i] = 0;
+//		MAX_SIZE[i] = 1000;
 	}
 }
-
 
 Data_Manager::
 ~Data_Manager() {
 	printf("\nEntering the deconstructor of Data_Manager\n");
-
+/*
 	for (int i = 0; i < this->data_vec.size(); i++) {
 		delete [] this->data_vec[i];
 	}
-
+*/
 	printf("finish the deconstructor of Data_Manager\n");
 /*
 	for(int i = 0; i < NUM_PATH; i++) {

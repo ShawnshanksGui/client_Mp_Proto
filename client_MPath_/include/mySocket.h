@@ -4,7 +4,7 @@
 #include "fcntl.h"
 #include "sys/types.h"
 #include "sys/socket.h"
-
+#include "common.h"
 #include "data_manager.h"
 /*
 struct Param_Transmitter{
@@ -43,9 +43,12 @@ public:
 	void transmitter_new(char *addr_self, char *port_self, 
 		                 char *addr_dst,  char *port_dst); 
 	
-	void send_td_func(int id_path, Data_Manager &data_manager);
-	void encaps_packet(VData_Type *packet, int num, VData_Type *data_src, 
-					   shared_ptr <struct Elem_Data> data_elem);
+	void recv_td_func(int id_path, Data_Manager &data_smanager);
+
+
+	void decaps_pkt(uchar &id_seg, uchar &block_id, uchar &symbol_id,
+				    int originBlk_size, uchar &s_level, uchar &k_fec, 
+				    uchar &m_fec); 
 
 	int Send_udp(char *data, int len);
 	int Recv_udp(char *buf_dst, int len);

@@ -27,7 +27,7 @@
 
 
 //FEC default parameter
-#define SYMBOL_FEC 1000
+#define SYMBOL_LEN_FEC 1000
 
 //specify the vailable number of video tile's quality    
 #define BITRATE_TYPE_NUM 3
