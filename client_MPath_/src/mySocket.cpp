@@ -84,8 +84,9 @@ void Transmitter::transmitter_new(char *addr_self, char *port_self,
 }
 */
 
-void Transmitter::transmitter_new(char *addr_self, char *port_self, 
-	                              char *addr_dst, char *port_dst) {
+void Transmitter::
+transmitter_new(char *addr_self, char *port_self, 
+				char *addr_dst, char *port_dst) {
 	memset(&(server_addr), 0, sizeof(server_addr));
 	memset(&(client_addr), 0, sizeof(client_addr));
 	
@@ -110,7 +111,8 @@ void Transmitter::transmitter_new(char *addr_self, char *port_self,
 //	Connect(sock_id, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));  
 }
 
-int Transmitter::Send_udp(char *data, int len) {
+int Transmitter::
+Send_udp(char *data, int len) {
 	int num_sent = 0;
 
 	if((num_sent = sendto(sock_id, data, len, 0, 
@@ -121,7 +123,8 @@ int Transmitter::Send_udp(char *data, int len) {
 	return num_sent;
 }
 
-int Transmitter::Recv_udp(char *buf_dst, int len) {
+int Transmitter::
+Recv_udp(char *buf_dst, int len) {
 	int num_recv = 0;
 	socklen_t len_server_addr;
 
@@ -132,50 +135,8 @@ int Transmitter::Recv_udp(char *buf_dst, int len) {
 	}
 	return num_recv;
 }
-/*
-//==========================================================================
-//==========================================================================
-//Author:      shawnshanks_fei          Date:  
-//Description: the thread function which implement data sending procedure 
-//Parameter:   num_core   
-//			   id_path
-//			   argv[]
-//             param_encd
-//==========================================================================
-void Transmitter::send_td_func(int id_path, Data_Manager &data_manager) {
-	Encoder encoder;
-	VData_Type packet[1000 + LEN_CONTRL_MSG];
 
-	affinity_set(id_path);
 
-	encoder.encoder_init();
-
-	while(1) {
-//fetch the data from send_Q, queue buffer
-		memcpy(packet, 0, 1000 + LEN_CONTRL_MSG);
-
-		shared_ptr<struct Elem_Data> data_elem = data_manager.data_fetch(id_path);
-
-		VData_Type *data_tmp = (char *)encoder.encode(data_elem->data, 
-										 data_elem->S_FEC, data_elem->K_FEC);
-//		data_manager.data_video[id_path].pop();
-		for(int i = 0; i < data_elem->K_FEC; i++) {
-			encaps_packet(packet, i, &(data_tmp[i*data_elem->S_FEC]), data_elem);
-			this->Send_udp(packet, data_elem->S_FEC + LEN_CONTRL_MSG);
-			SAFE_FREE(data_tmp);
-		}
-	}
-}	
-*/
-//==========================================================================
-//==========================================================================
-//Author:      shawnshanks_fei          Date:  
-//Description: the thread function which implement data sending procedure 
-//Parameter:   num_core   
-//			   id_path
-//			   argv[]
-//             param_encd
-//==========================================================================
 void Transmitter::
 recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
@@ -183,67 +144,77 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
 	int cnt_symbol = 0;
 	
-	uchar seg_id_prev    = INIT_VAL;
-	uchar block_id_prev  = INIT_VAL;
-	uchar symbol_id_prev = INIT_VAL;
+//	uchar prev_seg_id    = INIT_VAL;
+	uchar prev_block_id  = INIT_VAL;
+//	uchar symbol_id_prev = INIT_VAL;
 
-	uchar id_seg = 0; uchar block_id = 0; uchar symbol_id = 0;
-	uchar s_level = 0; uchar k_fec= 0; uchar m_fec = 0;
+//in case of the error of no decalration
+	shared_ptr<struct Block_Data> block_data;
+
+	uchar id_seg = 0; uchar id_region = 0; uchar block_id = 0; 
+	uchar symbol_id = 0; uchar s_level = 0; uchar k_fec= 0; uchar m_fec = 0;
 	int originBlk_size = 0;;
 
 	VData_Type packet[SYMBOL_LEN_FEC + LEN_CONTRL_MSG];
 
 	while(1) {
-		memcpy(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
+		memset(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 
 		Recv_udp(packet, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 		if(DATA == packet[0]) {
-			decaps_data_pkt(id_seg, block_id, symbol_id, originBlk_size, 
-						    s_level, k_fec, m_fec);
-			if(id_seg == prev_seg_id) {
-				if(block_id == prev_block_id) {
-					VData_Type symbol = MALLOC(VData_Type,block_data->S_FEC);
-					block_data->data[cnt_symbol] = symbol;
-					cnt_symbol++;
-					block_data->eraure[symbol_id] = GET;
-				}
-
-				else {
-					if(INIT_VAL != block_id_prev) {
+			decaps_pkt(packet, id_seg, id_region, block_id, symbol_id,
+					   originBlk_size, s_level, k_fec, m_fec);
+//			if(id_seg == prev_seg_id) {
+				if(block_id != prev_block_id) {
+//psuh block_data into recvQ_data[id_path], if not the first block 
+					if(INIT_VAL != prev_block_id) {
+						block_data->cnt_s = cnt_symbol;
 						data_manager.recvQ_data[id_path].push(block_data);
+						cnt_symbol = 0;
 					}
 // initialize the block data ,preparing for the new block
 					shared_ptr<struct Block_Data> block_data = \
 					(shared_ptr<struct Block_Data>)new(struct Block_Data);
 
 					block_data->data = MALLOC(VData_Type *, 256);
-
 					block_data->erasure = MALLOC(int, k_fec+m_fec);
+
 					for(int i = 0; i < k_fec + m_fec; i++) {
 						block_data->erasure[i] = LOST;
 					}
+					
 					if(s_level == 0) {block_data->S_FEC = SYMBOL_LEN_FEC;}
 					else {printf("s_level fault happened!!!\n");}
+
 					block_data->K_FEC = k_fec;
 					block_data->M_FEC = m_fec;
 					block_data->originBlk_size = originBlk_size;
+					block_data->id_seg = id_seg;
+					block_data->id_region = id_region;
 
-					VData_Type symbol = MALLOC(VData_Type,block_data->S_FEC);
+					VData_Type *symbol = MALLOC(VData_Type,block_data->S_FEC);
+					memcpy(symbol, &(packet[LEN_CONTRL_MSG]), block_data->S_FEC);
 					block_data->data[cnt_symbol] = symbol;
+
 					cnt_symbol++;
-					block_data->eraure[symbol_id] = GET;
+					block_data->erasure[symbol_id] = GET;
 				}
 
-			}
-			else {
+				else {
+					VData_Type *symbol = MALLOC(VData_Type,block_data->S_FEC);
+					memcpy(symbol, &(packet[LEN_CONTRL_MSG]), block_data->S_FEC);
+					block_data->data[cnt_symbol] = symbol;
 
-			}
+					cnt_symbol++;
+					block_data->erasure[symbol_id] = GET;
+				}
+
+//			}
 		}
 //fetch the data from send_Q, queue buffer
 
 	}
 }
-
 
 //==========================================================================
 //==========================================================================
@@ -253,8 +224,9 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 //             from the number of 0 padding.  
 //==========================================================================
 void Transmitter::
-decaps_pkt(uchar &id_seg, uchar &block_id, uchar &symbol_id,
-		   int originBlk_size, uchar &s_level, uchar &k_fec, uchar &m_fec) {
+decaps_pkt(char *packet, uchar &id_seg, uchar &id_region, 
+		   uchar &block_id, uchar &symbol_id, int &originBlk_size,
+		   uchar &s_level, uchar &k_fec, uchar &m_fec) {
 	id_seg    = packet[1];
 	id_region = packet[2];
 

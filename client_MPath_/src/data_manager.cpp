@@ -9,7 +9,6 @@
 #include "../include/myUtility.h"
 
 
-
 using namespace std;
 
 //for debugging
@@ -67,7 +66,7 @@ Data_Manager::
 	}
 */
 }
-
+/*
 //==========================================================================
 //==========================================================================
 //Author:      shawnshanks_fei          Date:     20180204
@@ -139,7 +138,7 @@ bool Data_Manager::Is_empty(ID_BUF id_buf) {
 	return 0 == (buf_size[id_buf]);
 }
 
-
+*/
 
 
 

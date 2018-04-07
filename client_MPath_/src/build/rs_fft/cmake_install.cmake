@@ -1,4 +1,4 @@
-# Install script for directory: /home/guifei/server_Mpath_proto/server_MPath_proto/src/rs_fft
+# Install script for directory: /home/guifei/client_Mpath_Proto/client_MPath_/src/rs_fft
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -29,11 +29,6 @@ endif()
 
 # Install shared libraries without execute permission?
 if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
-  set(CMAKE_INSTALL_SO_NO_EXE "0")
-endif()
-
-# Is this installation the result of a crosscompile?
-if(NOT DEFINED CMAKE_CROSSCOMPILING)
-  set(CMAKE_CROSSCOMPILING "FALSE")
+  set(CMAKE_INSTALL_SO_NO_EXE "1")
 endif()
 

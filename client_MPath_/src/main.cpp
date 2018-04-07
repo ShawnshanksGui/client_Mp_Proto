@@ -11,17 +11,13 @@
 #include "../include/timer.h"
 #include "../include/common.h"
 #include "../include/mySocket.h"
-#include "../include/Decoder.h"
-#include "../include/video_reader.h"
+#include "../include/decoder.h"
+
 #include "../include/data_manager.h"
+#include "../include/video_writer.h"
 #include "../include/system_params.h"
-#include "../include/path_selector.h"
-#include "../include/codeStreaming_parser.h"
 
 #include "../include/myUtility.h"
-#include "../include/bitrate_select.h"
-#include "../include/fec_param_adjustor.h"
-
 
 using namespace std;
 
@@ -40,15 +36,16 @@ int main(int argc, char **argv) {
 	Timer t;
 	Data_Manager data_manager;
 
-	Video_Reader video_writer;
-
+//class arguments
 	vector<Decoder> decoder(NUM_PATH);
 	vector<Transmitter> client(NUM_PATH);
-
+	vector<Video_Writer> video_writer(NUM_PATH);
+//thread(class) arguments
 	vector<thread> decoder_worker(NUM_PATH);
 	vector<thread> receiver_worker(NUM_PATH);
-	vector<thread> writeVideo_worker(NUM_PATH);	
+	vector<thread> writer_worker(NUM_PATH);	
 
+//the member function 
 	client[0].transmitter_new(argv[1], argv[2], argv[3], argv[4]);
 	client[1].transmitter_new(argv[5], argv[6], argv[7], argv[8]);
 //	thread setTimer_worker(&Timer::setTimer_td_func, &t, 
@@ -57,7 +54,7 @@ int main(int argc, char **argv) {
 
 //===========================================================================
 //i specifies the id of path, 
-//i+2 identifies the id of core bind to the thread
+//i+1 identifies the id of core bind to the thread
 	for(int i = 0; i < NUM_PATH; i++) {			
 		receiver_worker[i]  = thread(&Transmitter::recv_td_func, 
 			                	     &(client[i]), i, i, ref(data_manager));
@@ -68,11 +65,11 @@ int main(int argc, char **argv) {
 	}
 //===========================================================================
 
-	//reap or recycle the threads created.	
+//reap or recycle the threads created.	
 	for(int i = 0; i < NUM_PATH; i++) {
 		decoder_worker[i].join();
 		receiver_worker[i].join();
-		writer_worker[i].jion();
+		writer_worker[i].join();
 	}
 
 //	setTimer_worker.join();

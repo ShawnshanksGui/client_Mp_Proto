@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project (test_reader)
+project (test_writer)
 
 add_compile_options(-std=c++11)
 
@@ -17,10 +17,11 @@ find_package(Threads REQUIRED)
 
 add_subdirectory(rs_fft)
 
-#add_executable(test_reader DIR_SRCS)
-add_executable(test_reader  test_videoReader.cpp video_reader.cpp data_manager.cpp codeStreaming_parser.cpp bitrate_select.cpp fec_param_adjustor.cpp path_selector.cpp myUtility.cpp)
+#add_executable(test_writer DIR_SRCS)
+add_executable(test_writer main.cpp video_writer.cpp  data_manager.cpp myUtility.cpp decoder.cpp mySocket.cpp timer.cpp thread_core_affinity_set.cpp)
 
 #link to static library
-#target_link_libraries(test_reader Threads::Threads)
-target_link_libraries(test_reader ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(test_reader RS_FFT)
+#target_link_libraries(test_writer Threads::Threads)
+target_link_libraries(test_writer ${CMAKE_THREAD_LIBS_INIT})
+
+target_link_libraries(test_writer RS_FFT)

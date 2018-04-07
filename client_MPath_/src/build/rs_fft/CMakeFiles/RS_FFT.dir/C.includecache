@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/guifei/server_Mpath_proto/server_MPath_proto/include/rs_fft.h
+/home/guifei/client_Mpath_Proto/client_MPath_/include/rs_fft.h
 
-/home/guifei/server_Mpath_proto/server_MPath_proto/src/rs_fft/rs_fft.c
+/home/guifei/client_Mpath_Proto/client_MPath_/src/rs_fft/rs_fft.c
 stdlib.h
 -
 string.h
@@ -18,5 +18,5 @@ time.h
 stdint.h
 -
 ../../include/rs_fft.h
-/home/guifei/server_Mpath_proto/server_MPath_proto/include/rs_fft.h
+/home/guifei/client_Mpath_Proto/client_MPath_/include/rs_fft.h
 

@@ -336,7 +336,7 @@ void *fft_decode(struct Data_Remain data_remain, int S, int K){
 }
 */
 
-void *fft_decode(char **recv_data, char *erasure, int S, int K){
+void *fft_decode(char **recv_data, int *erasure, int S, int K){
 	struct Param_Decd param_decd;
 	struct Data_Remain data_remain;
 

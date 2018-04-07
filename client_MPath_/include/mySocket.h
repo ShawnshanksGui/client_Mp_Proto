@@ -46,9 +46,9 @@ public:
 	void recv_td_func(int id_core, int id_path, Data_Manager &data_smanager);
 
 
-	void decaps_pkt(uchar &id_seg, uchar &block_id, uchar &symbol_id,
-				    int originBlk_size, uchar &s_level, uchar &k_fec, 
-				    uchar &m_fec); 
+	void decaps_pkt(char *packet, uchar &id_seg, uchar &id_region, 
+					uchar &block_id, uchar &symbol_id, int &originBlk_size,
+					uchar &s_level, uchar &k_fec, uchar &m_fec); 
 
 	int Send_udp(char *data, int len);
 	int Recv_udp(char *buf_dst, int len);

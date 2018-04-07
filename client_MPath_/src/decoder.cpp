@@ -1,3 +1,5 @@
+#include "../include/thread_core_affinity_set.h"
+
 #include <string>
 #include <memory>
 #include <vector>
@@ -15,6 +17,8 @@ extern "C"
 	#include "../include/rs_fft.h"
 }
 
+using namespace std;
+
 void Decoder::
 decoder_init()  {
 	init();
@@ -22,8 +26,8 @@ decoder_init()  {
 }
 //RS-FFT
 void *Decoder::
-decode(char **data_recv, char *erasure, int S, int K, int M) {
-	fft_decode(data_recv, erasure, S, K);
+decode(char **data_recv, int *erasure, int S, int K, int M) {
+	return fft_decode(data_recv, erasure, S, K);
 }	
 
 #elif
@@ -38,8 +42,8 @@ decoder_init()  {
 }
 //RS codes
 void *Decoder::
-decode(char **data_recv, char *erasure, int S, int K, int M) {
-	rs_decode(data_recv, erasure, S, K, M);
+decode(char **data_recv, int *erasure, int S, int K, int M) {
+	return rs_decode(data_recv, erasure, S, K, M);
 }	
 #endif
 
@@ -50,8 +54,6 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 	affinity_set(id_core);
 
 	int _size = 0;
-	vector<shared_ptr<char *>> result_arr(2);
-
 	VData_Type *decd_block = nullptr;
 
 	decoder_init();
@@ -61,9 +63,12 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 		data_manager.recvQ_data[id_path].front();
 		data_manager.recvQ_data[id_path].pop();
 		if(block_data->cnt_s < block_data->K_FEC) {
-			result_arr = extract_origin_data(block_data);
-			decd_block = result_arr[1];
-			_size      = result_arr[0];
+//			void ** result_arr;			
+			struct Ret_Val result;
+			result = extract_origin_data(block_data);
+
+			decd_block = result.data;
+			_size      = result.data_size;
 		}
 		else {
 			decd_block=(VData_Type *)decode(block_data->data, block_data->erasure,
@@ -71,7 +76,7 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 											block_data->M_FEC);
 		}
 
-		shared_ptr<BLock_Decd> block_decd = (shared_ptr<struct Block_Decd>) \
+		shared_ptr<Block_Decd> block_decd = (shared_ptr<struct Block_Decd>) \
 											new(struct Block_Decd);
 		encaps_decdBlk(block_decd, block_data, decd_block, _size);
 
@@ -87,11 +92,12 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 //Parameter:   code_pkt: indicates the number of 
 //             code symbol(except for origin data)	       
 //==========================================================================
-vector<shared_ptr<char *>> Decoder::
+Res_Val Decoder::
 extract_origin_data(shared_ptr<struct Block_Data> block_data) {
 #ifdef ENABLE_FFT_RS 
 	int loc = 0;
-	vector<shared_ptr<char *>> result(2);
+//	vector<shared_ptr<void *>> result = new shared_ptr<void *>[2];
+	struct Ret_Val result;
 
 //	VData_Type *data = MALLOC(VData_Type, block_data->S_FEC*block_data->K_FEC);
 	VData_Type *data = MALLOC(VData_Type, block_data->originBlk_size);
@@ -126,9 +132,9 @@ extract_origin_data(shared_ptr<struct Block_Data> block_data) {
 		}
 	}
 //get the addr of remaining origin data.
-	result[1] = data;
+	result.data = data;
 //get the number of remaining origin symbol(recovered), equal to loc.
-	result[0] = loc;
+	result.data_size = loc;
 #elif
 /*
 ................................................
@@ -141,8 +147,8 @@ extract_origin_data(shared_ptr<struct Block_Data> block_data) {
 
 void Decoder::
 BLOCK_FREE(shared_ptr<struct Block_Data> block_data) {
-	for(int i = 0, k = 0; i < block_data->K_FEC+block-data->M_FEC; i++) {
-		if(GET == erasure[i]) { 
+	for(int i = 0, k = 0; i < block_data->K_FEC+block_data->M_FEC; i++) {
+		if(GET == block_data->erasure[i]) { 
 			SAFE_FREE(block_data->data[k]);
 			k++;
 		}

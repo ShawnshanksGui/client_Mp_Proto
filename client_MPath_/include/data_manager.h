@@ -68,6 +68,7 @@ struct Block_Data{
 	int id_nalu;
 
 	int id_seg;
+	int id_region;
 //specify sequence of nalus in a video segment,
 //the first, mid or the last nalu?
 	int type_location;
@@ -79,19 +80,17 @@ struct Block_Data{
 struct Block_Decd{
 //an order of S*K bytes data
 	VData_Type *data_decd;
-	int S_FEC;
-	int K_FEC;
-	int M_FEC;
+//	int S_FEC;
+//	int K_FEC;
+//	int M_FEC;
 	
-	int block_id;
-	int *erasure;
-	int cnt_s;
-
+//	int block_id;
+//	int cnt_s;
 	int len_remain_data;
 	int originBlk_size;
-	int id_path;
-	int id_nalu;
-
+//	int id_path;
+	int id_region;
+//	int id_nalu;
 	int id_seg;
 //specify sequence of nalus in a video segment,
 //the first, mid or the last nalu?
@@ -105,9 +104,9 @@ struct Block_Decd{
 class Data_Manager {
 public:	
 //	vector<queue<shared_ptr<VData_Type *>>> recv_data;
-	vector<queue<shared_pre<Block_Data *>>> recvQ_data;  
+	vector<queue<shared_ptr<Block_Data> > > recvQ_data;  
 //data alredy decoded	
-	vector<queue<shared_ptr<Block_Decd *>>> decdQ_data;
+	vector<queue<shared_ptr<Block_Decd> > > decdQ_data;
 
 	vector<VData_Type *> data_vec;
 //	vector<VData_Type *> data_vec;
@@ -116,25 +115,25 @@ public:
 	Data_Manager();
 	~Data_Manager();
 
-	bool data_save(shared_ptr<struct Elem_Data> data, ID_PATH id_path);
-	shared_ptr<struct Elem_Data> data_fetch(ID_PATH id_path);
+//	bool data_save(shared_ptr<struct Elem_Data> data, ID_PATH id_path);
+//	shared_ptr<struct Elem_Data> data_fetch(ID_PATH id_path);
 
 //friend classes
-	friend class Video_Reader;
-	friend class Encoder;
+	friend class Video_Writer;
+	friend class Decoder;
 	friend class Transmitter;
-	friend void partition_nalu(int id_region, VData_Type *cstr,
-							   Data_Manager &data_manager);	
+//	friend void partition_nalu(int id_region, VData_Type *cstr,
+//							   Data_Manager &data_manager);	
 
 //	std::mutex mtx[2];
 	
-	int buf_size[NUM_PATH];
-	int MAX_SIZE[NUM_PATH];
+//	int buf_size[NUM_PATH];
+//	int MAX_SIZE[NUM_PATH];
 
-	bool Is_empty(ID_BUF id_buf);
-	bool Is_overflow(ID_BUF id_buf);
-	bool Push(shared_ptr<struct Elem_Data> data_src, ID_PATH id_path);
-	shared_ptr<struct Elem_Data> Pop(ID_PATH id_path);
+//	bool Is_empty(ID_BUF id_buf);
+//	bool Is_overflow(ID_BUF id_buf);
+//	bool Push(shared_ptr<struct Elem_Data> data_src, ID_PATH id_path);
+//	shared_ptr<struct Elem_Data> Pop(ID_PATH id_path);
 
 private:
 //video reader
