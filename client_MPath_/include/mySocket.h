@@ -43,7 +43,7 @@ public:
 	void transmitter_new(char *addr_self, char *port_self, 
 		                 char *addr_dst,  char *port_dst); 
 	
-	void recv_td_func(int id_path, Data_Manager &data_smanager);
+	void recv_td_func(int id_core, int id_path, Data_Manager &data_smanager);
 
 
 	void decaps_pkt(uchar &id_seg, uchar &block_id, uchar &symbol_id,

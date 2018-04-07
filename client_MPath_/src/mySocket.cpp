@@ -16,6 +16,7 @@
 #define DATA 1
 #define CONTROL 2
 
+#define INIT_VAL 255
 
 Transmitter::~Transmitter() {
 	if(sock_id > 0)
@@ -176,24 +177,21 @@ void Transmitter::send_td_func(int id_path, Data_Manager &data_manager) {
 //             param_encd
 //==========================================================================
 void Transmitter::
-recv_td_func(int id_path, Data_Manager &data_manager) {
+recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
-	affinity_set(id_path);
+	affinity_set(id_core);
 
 	int cnt_symbol = 0;
 	
-	uchar seg_id_prev    = 255;
-	uchar block_id_prev  = 255;
-	uchar symbol_id_prev = 255;
+	uchar seg_id_prev    = INIT_VAL;
+	uchar block_id_prev  = INIT_VAL;
+	uchar symbol_id_prev = INIT_VAL;
 
 	uchar id_seg = 0; uchar block_id = 0; uchar symbol_id = 0;
 	uchar s_level = 0; uchar k_fec= 0; uchar m_fec = 0;
 	int originBlk_size = 0;;
 
-
 	VData_Type packet[SYMBOL_LEN_FEC + LEN_CONTRL_MSG];
-
-	affinity_set(id_path);
 
 	while(1) {
 		memcpy(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
@@ -211,7 +209,7 @@ recv_td_func(int id_path, Data_Manager &data_manager) {
 				}
 
 				else {
-					if(255 != block_id_prev) {
+					if(INIT_VAL != block_id_prev) {
 						data_manager.recvQ_data[id_path].push(block_data);
 					}
 // initialize the block data ,preparing for the new block
@@ -258,7 +256,7 @@ void Transmitter::
 decaps_pkt(uchar &id_seg, uchar &block_id, uchar &symbol_id,
 		   int originBlk_size, uchar &s_level, uchar &k_fec, uchar &m_fec) {
 	id_seg    = packet[1];
-	id_reg    = packet[2];
+	id_region = packet[2];
 
 	block_id  = packet[7];
 	symbol_id = packet[8];

@@ -16,7 +16,7 @@ using namespace std;
 //#define ENABLE_DEBUG_D_MAMAGER
 
 Data_Manager::
-Data_Manager(int max_size):recvQ_data(NUM_PATH) {
+Data_Manager(int max_size):recvQ_data(NUM_PATH), decdQ_data(NUM_PATH) {
 	for(int i = 0; i < NUM_PATH; i++) {
 //		buf_size[i] = 0;
 //		MAX_SIZE[i] = max_size;
@@ -24,7 +24,7 @@ Data_Manager(int max_size):recvQ_data(NUM_PATH) {
 }
 
 Data_Manager::
-Data_Manager():decdQ_data(NUM_PATH) {
+Data_Manager():recvQ_data(NUM_PATH), decdQ_data(NUM_PATH) {
 	for(int i = 0; i < NUM_PATH; i++) {
 //		buf_size[i] = 0;
 //		MAX_SIZE[i] = 1000;
