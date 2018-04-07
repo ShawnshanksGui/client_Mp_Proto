@@ -59,28 +59,30 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 	decoder_init();
 	while(1) {
 //fetch one block from queue_recv. 
-		shared_ptr<struct Block_Data> block_data = \
-		data_manager.recvQ_data[id_path].front();
-		data_manager.recvQ_data[id_path].pop();
-		if(block_data->cnt_s < block_data->K_FEC) {
-//			void ** result_arr;			
-			struct Ret_Val result;
-			result = extract_origin_data(block_data);
+		if(data_manager.decdQ_data[id_path].size() > 0) {
+			shared_ptr<struct Block_Data> block_data = \
+			data_manager.recvQ_data[id_path].front();
+			data_manager.recvQ_data[id_path].pop();
+			if(block_data->cnt_s < block_data->K_FEC) {
+//				void ** result_arr;			
+				struct Ret_Val result;
+				result = extract_origin_data(block_data);
 
-			decd_block = result.data;
-			_size      = result.data_size;
+				decd_block = result.data;
+				_size      = result.data_size;
+			}
+			else {
+				decd_block=(VData_Type *)decode(block_data->data, block_data->erasure,
+												block_data->S_FEC, block_data->K_FEC,
+												block_data->M_FEC);
+			}
+
+			shared_ptr<Block_Decd> block_decd = (shared_ptr<struct Block_Decd>) \
+												new(struct Block_Decd);
+			encaps_decdBlk(block_decd, block_data, decd_block, _size);
+
+			BLOCK_FREE(block_data);
 		}
-		else {
-			decd_block=(VData_Type *)decode(block_data->data, block_data->erasure,
-											block_data->S_FEC, block_data->K_FEC,
-											block_data->M_FEC);
-		}
-
-		shared_ptr<Block_Decd> block_decd = (shared_ptr<struct Block_Decd>) \
-											new(struct Block_Decd);
-		encaps_decdBlk(block_decd, block_data, decd_block, _size);
-
-		BLOCK_FREE(block_data);
 	}
 }
 

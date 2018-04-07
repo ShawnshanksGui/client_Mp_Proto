@@ -1,6 +1,3 @@
-#ifndef _AFFINITY_H_
-#define _AFFINITY_H_
-
 //set cpu affinity for thread
 #define _GNU_SOURCE
 #include "sched.h"
@@ -55,4 +52,3 @@ void affinity_set(int id_core) {
 	}
 }
 //==========================================================================
-#endif
