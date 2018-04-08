@@ -7,12 +7,19 @@
 #include "../include/common.h"
 
 //idendifies whether the first time or not
-#define INIT_VAL_W 1000
+#define INIT_VAL_W 10000
 
 using namespace std;
 
+//notice whether ought to close the current thread or not
+extern int Terminal_AllThds;
+extern int Terminal_WriterThds;
+
 void Video_Writer::
 video_writer_td_func(int id_path, Data_Manager &data_manager) {
+
+	int len_seg = 1;
+
 //	int cnt_file = 0;
 	int cur_id_seg     = INIT_VAL_W;
 	int cur_id_region  = INIT_VAL_W;
@@ -25,8 +32,10 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
 	FILE *fp[REGION_NUM][2] = {{nullptr, nullptr}, {nullptr, nullptr}, \
 							   {nullptr, nullptr}};
 
-	while(1) {
+	while(!Terminal_AllThds && !Terminal_WriterThds) {
+
 		if(data_manager.decdQ_data[id_path].size() > 0) {
+
 			shared_ptr<struct Block_Decd> block_decd = \
 			data_manager.decdQ_data[id_path].front();
 			data_manager.decdQ_data[id_path].pop();
@@ -39,8 +48,9 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
 //create and open a new file.
 //================================================================================
 				string outputVideo_path;
-				outputVideo_path = "seg_" + to_string(cur_id_seg) + "_region_" \
-									+ to_string(cur_id_region) + ".265";
+				outputVideo_path = "~/360video_received/len_seg_"+to_string(len_seg) \
+								    + "s/seg_" + to_string(cur_id_seg) + "_region_"\
+								    + to_string(cur_id_region) + ".265";
 
 		   		char *out_path_cStr=(char *)new char[outputVideo_path.length()+1];
    				strcpy(out_path_cStr, outputVideo_path.c_str());

@@ -21,6 +21,9 @@
 #define  STOP                  0
 #define READY                  1
 
+#define YES                    1
+#define NO                     0
+
 #define GET  0 //Packet received successfully
 #define LOST 1 //Packet lost in  transmission
 

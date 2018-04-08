@@ -8,8 +8,7 @@ public:
 
 	~Timer() {}
 
-	void setTimer_td_func(int &terminalFlag, 
-					 	  int &startFlag_one_timeSlice);
+	void setTimer_td_func();
 private:
 
 };

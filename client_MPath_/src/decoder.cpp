@@ -8,6 +8,10 @@
 #include "../include/data_manager.h"
 #include "../include/decoder.h"
 
+//notice whether ought to close the current thread or not
+extern int Terminal_AllThds;
+extern int Terminal_DecdThds;
+
 //specidies whether FFT_RS or RS
 #define ENABLE_FFT_RS
 
@@ -57,7 +61,8 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 	VData_Type *decd_block = nullptr;
 
 	decoder_init();
-	while(1) {
+	
+	while(!Terminal_AllThds && !Terminal_DecdThds) {
 //fetch one block from queue_recv. 
 		if(data_manager.decdQ_data[id_path].size() > 0) {
 			shared_ptr<struct Block_Data> block_data = \

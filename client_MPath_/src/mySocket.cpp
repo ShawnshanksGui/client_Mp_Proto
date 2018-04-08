@@ -18,6 +18,15 @@
 
 #define INIT_VAL 255
 
+//global variable flag for noticing whether already received the first packet
+int Flag_AlreadRecv = 0;
+
+//notice whether ought to close the current thread or not
+//global extrenal variabl for terminal flags
+extern int Terminal_AllThds;
+extern int Terminal_RecvThds;
+
+
 Transmitter::~Transmitter() {
 	if(sock_id > 0)
 		close(sock_id);
@@ -47,42 +56,6 @@ void Transmitter::Bind(int sock_id, SA *addr_self, int len) const
 	}
 }
 
-/*
-//udp protocol doesn't neede to establish any connections!!!
-void Transmitter::Connect(int sock_id, struct sockaddr *serv_addr, int len_sock_addr) const {
-	if(-1 == connect(sock_id, serv_addr, len_sock_addr)) {
-       	perror("Connect socket failed!\n");
-        exit(0);
-}
-}
-*/
-/*
-void Transmitter::transmitter_new(char *addr_self, char *port_self, 
-	                              char *addr_dst, char *port_dst) {
-	memset(&(server_addr), 0, sizeof(server_addr));
-	memset(&(client_addr), 0, sizeof(client_addr));
-	
-	Socket_for_udp();
-
-//enable fastly recover the port which have being used. 
-	int state_reuseAddr              = ON_REUSEADDR;
-//	
-	Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, 
-		       &state_reuseAddr, sizeof(state_reuseAddr));
-
-	server_addr.sin_family  = AF_INET;
-	server_addr.sin_port    = htons(atoi(port_dst));
-	inet_pton(AF_INET, addr_dst, &(server_addr.sin_addr));
-
-	client_addr.sin_family = AF_INET;
-	client_addr.sin_port   = htons(atoi(port_self));
-	inet_pton(AF_INET, addr_self, &(client_addr.sin_addr));
-
-	Bind(sock_id, (struct sockaddr *)&client_addr, sizeof(client_addr));
-//  udp needn't establish any connection!!!
-//	Connect(sock_id, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));  
-}
-*/
 
 void Transmitter::
 transmitter_new(char *addr_self, char *port_self, 
@@ -142,6 +115,7 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
 	affinity_set(id_core);
 
+	int cnt_pkt    = 0;
 	int cnt_symbol = 0;
 	
 //	uchar prev_seg_id    = INIT_VAL;
@@ -157,10 +131,17 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
 	VData_Type packet[SYMBOL_LEN_FEC + LEN_CONTRL_MSG];
 
-	while(1) {
-		memset(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
+	printf("\nenter the while recycle of recv_thread\n");
+	while(!Terminal_AllThds && !Terminal_RecvThds) {
 
+		memset(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
+		
+		printf("wait for receiving!\n");
 		Recv_udp(packet, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
+		printf("*received the %d-th packet*\n", ++cnt_pkt);
+//notice the setTimer thread to start the timer
+		if(Flag_AlreadRecv != YES) {Flag_AlreadRecv = YES;}
+
 		if(DATA == packet[0]) {
 			decaps_pkt(packet, id_seg, id_region, block_id, symbol_id,
 					   originBlk_size, s_level, k_fec, m_fec);
@@ -185,7 +166,7 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 					}
 					
 					if(s_level == 0) {block_data->S_FEC = SYMBOL_LEN_FEC;}
-					else {printf("s_level fault happened!!!\n");}
+					else {printf("s_level = %d,  fault happened!!!\n", s_level);}
 
 					block_data->K_FEC = k_fec;
 					block_data->M_FEC = m_fec;
@@ -239,6 +220,11 @@ decaps_pkt(VData_Type *packet, uchar &id_seg, uchar &id_region,
 	//......
 	
 	originBlk_size  = *((int *)&(packet[3]));
+//for debugging
+	printf("the packet info is:\n");
+	printf("id_seg = %d, id_region = %d, originBlk_size = %d, block_id = %d, symbol_id = %d, \
+		s_level = %d, k_fec = %d, m_fec = %d\n", id_seg, id_region, originBlk_size, \
+		block_id, symbol_id, s_level, k_fec, m_fec);
 }
 /*
 void Transmitter::encaps_packet(VData_Type *packet, int symbol_id, VData_Type *data_src, 
@@ -256,5 +242,44 @@ void Transmitter::encaps_packet(VData_Type *packet, int symbol_id, VData_Type *d
 
 
 	memcpy(&(packet[9]), data_src, data_elem->S_FEC);	
+}
+*/
+
+
+/*
+//udp protocol doesn't neede to establish any connections!!!
+void Transmitter::Connect(int sock_id, struct sockaddr *serv_addr, int len_sock_addr) const {
+	if(-1 == connect(sock_id, serv_addr, len_sock_addr)) {
+       	perror("Connect socket failed!\n");
+        exit(0);
+}
+}
+*/
+
+/*
+void Transmitter::transmitter_new(char *addr_self, char *port_self, 
+	                              char *addr_dst, char *port_dst) {
+	memset(&(server_addr), 0, sizeof(server_addr));
+	memset(&(client_addr), 0, sizeof(client_addr));
+	
+	Socket_for_udp();
+
+//enable fastly recover the port which have being used. 
+	int state_reuseAddr              = ON_REUSEADDR;
+//	
+	Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, 
+		       &state_reuseAddr, sizeof(state_reuseAddr));
+
+	server_addr.sin_family  = AF_INET;
+	server_addr.sin_port    = htons(atoi(port_dst));
+	inet_pton(AF_INET, addr_dst, &(server_addr.sin_addr));
+
+	client_addr.sin_family = AF_INET;
+	client_addr.sin_port   = htons(atoi(port_self));
+	inet_pton(AF_INET, addr_self, &(client_addr.sin_addr));
+
+	Bind(sock_id, (struct sockaddr *)&client_addr, sizeof(client_addr));
+//  udp needn't establish any connection!!!
+//	Connect(sock_id, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));  
 }
 */
