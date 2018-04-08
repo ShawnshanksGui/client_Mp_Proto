@@ -172,6 +172,7 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 						data_manager.recvQ_data[id_path].push(block_data);
 						cnt_symbol = 0;
 					}
+					prev_block_id = block_id;
 // initialize the block data ,preparing for the new block
 					shared_ptr<struct Block_Data> block_data = \
 					(shared_ptr<struct Block_Data>)new(struct Block_Data);
@@ -224,17 +225,17 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 //             from the number of 0 padding.  
 //==========================================================================
 void Transmitter::
-decaps_pkt(char *packet, uchar &id_seg, uchar &id_region, 
+decaps_pkt(VData_Type *packet, uchar &id_seg, uchar &id_region, 
 		   uchar &block_id, uchar &symbol_id, int &originBlk_size,
 		   uchar &s_level, uchar &k_fec, uchar &m_fec) {
-	id_seg    = packet[1];
-	id_region = packet[2];
+	id_seg    = (uchar)packet[1];
+	id_region = (uchar)packet[2];
 
-	block_id  = packet[7];
-	symbol_id = packet[8];
-	s_level   = packet[9];
-	k_fec     = packet[10];
-	m_fec     = packet[11];
+	block_id  = (uchar)packet[7];
+	symbol_id = (uchar)packet[8];
+	s_level   = (uchar)packet[9];
+	k_fec     = (uchar)packet[10];
+	m_fec     = (uchar)packet[11];
 	//......
 	
 	originBlk_size  = *((int *)&(packet[3]));

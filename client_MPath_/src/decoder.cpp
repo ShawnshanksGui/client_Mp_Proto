@@ -26,7 +26,7 @@ decoder_init()  {
 }
 //RS-FFT
 void *Decoder::
-decode(char **data_recv, int *erasure, int S, int K, int M) {
+decode(VData_Type **data_recv, int *erasure, int S, int K, int M) {
 	return fft_decode(data_recv, erasure, S, K);
 }	
 
@@ -42,7 +42,7 @@ decoder_init()  {
 }
 //RS codes
 void *Decoder::
-decode(char **data_recv, int *erasure, int S, int K, int M) {
+decode(VData_Type **data_recv, int *erasure, int S, int K, int M) {
 	return rs_decode(data_recv, erasure, S, K, M);
 }	
 #endif
@@ -99,7 +99,7 @@ extract_origin_data(shared_ptr<struct Block_Data> block_data) {
 #ifdef ENABLE_FFT_RS 
 	int loc = 0;
 //	vector<shared_ptr<void *>> result = new shared_ptr<void *>[2];
-	struct Ret_Val result;
+	Res_Val result;
 
 //	VData_Type *data = MALLOC(VData_Type, block_data->S_FEC*block_data->K_FEC);
 	VData_Type *data = MALLOC(VData_Type, block_data->originBlk_size);

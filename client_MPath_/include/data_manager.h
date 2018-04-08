@@ -10,8 +10,8 @@
 
 #include "system_params.h"
 
-typedef int      ID_BUF;
-typedef int     ID_PATH;
+typedef 		 int      ID_BUF;
+typedef 		 int     ID_PATH;
 typedef char VData_Type;
 
 //Judge whether PUSH is succesfully or not! 
@@ -108,7 +108,7 @@ public:
 //data alredy decoded	
 	vector<queue<shared_ptr<Block_Decd> > > decdQ_data;
 
-	vector<VData_Type *> data_vec;
+//	vector<VData_Type *> data_vec;
 //	vector<VData_Type *> data_vec;
 
 	Data_Manager(int max_size);
