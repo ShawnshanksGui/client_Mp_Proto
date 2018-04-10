@@ -37,10 +37,6 @@ typedef char VData_Type;
 #define END_FOR_END_NALU     9
 
 
-//the bytes of control message bytes  in one packet 
-#define LEN_CONTRL_MSG 15
-
-
 using namespace std;
 
 
@@ -176,7 +172,7 @@ typedef char struct Elem_Data;
 #define TRANSMIT_CORE      2
 
 //the bytes of control message bytes  in one packet 
-#define LEN_CONTRL_MSG 10
+#define LEN_CONTRL_MSG 18
 
 
 using namespace std;

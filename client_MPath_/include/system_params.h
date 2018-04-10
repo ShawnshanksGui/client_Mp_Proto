@@ -29,6 +29,10 @@
 //FEC default parameter
 #define SYMBOL_LEN_FEC 1000
 
+//the bytes of control message bytes  in one packet 
+#define LEN_CONTRL_MSG 18
+
+
 //specify the vailable number of video tile's quality    
 #define BITRATE_TYPE_NUM 3
 

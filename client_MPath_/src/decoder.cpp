@@ -55,7 +55,8 @@ decode(VData_Type **data_recv, int *erasure, int S, int K, int M) {
 
 void Decoder::
 decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
-	affinity_set(id_core);
+
+	affinity_set(id_core, "decoder_thread");
 
 	int _size = 0;
 	VData_Type *decd_block = nullptr;
@@ -95,7 +96,7 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 //==========================================================================
 //==========================================================================
 //Author:      shawnshanks_fei          Date:     
-//Description: implement extract_origin_data
+//Description: implement extract_origin_data, if having no enough data to decode
 //Parameter:   code_pkt: indicates the number of 
 //             code symbol(except for origin data)	       
 //==========================================================================

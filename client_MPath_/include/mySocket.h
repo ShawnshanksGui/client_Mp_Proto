@@ -21,20 +21,27 @@ typedef struct sockaddr SA;
 
 class Transmitter {
 private:
+//  Udp socket doesn't need to establish any connections!!!
+//	void Connect(int sock_id, struct sockaddr *serv_addr, int len_sock_addr) const;
+
+public:
 	int sock_id;
+
 	struct sockaddr_in client_addr;
 	struct sockaddr_in server_addr;
 
+	socklen_t client_addr_len;
+	socklen_t server_addr_len;
+
 	void Socket_for_udp();
+	void Socket_for_tcp();
 
 	void Setsockopt(int , int , int, void *, int);
 
 	void Bind(int, SA *, int) const;
 
-//  Udp socket doesn't need to establish any connections!!!
-//	void Connect(int sock_id, struct sockaddr *serv_addr, int len_sock_addr) const;
+	void Connect();
 
-public:
 //	Transmitter(int, struct sockaddr_in, struct sockaddr_in);
 	Transmitter() {}
 
@@ -42,9 +49,13 @@ public:
 
 	void transmitter_new(char *addr_self, char *port_self, 
 		                 char *addr_dst,  char *port_dst); 
-	
+
+	void transmitter_new_tcp_sponsor(char *addr_self, char *port_self,
+                					 char *addr_dst, char *port_dst);
+
 	void recv_td_func(int id_core, int id_path, Data_Manager &data_smanager);
 
+//	void recv_func(int id_path, Data_Manager &data_smanager);
 
 	void decaps_pkt(VData_Type *packet, uchar &id_seg, uchar &id_region, 
 					uchar &block_id, uchar &symbol_id, int &originBlk_size,
@@ -52,6 +63,11 @@ public:
 
 	int Send_udp(char *data, int len);
 	int Recv_udp(char *buf_dst, int len);
+
+	int Send_tcp(char *data, int len);
+	int Recv_tcp(char *data_dst, int len);
+
+	void Print_BlockData(shared_ptr<struct Block_Data> blk);
 };
 
 #endif

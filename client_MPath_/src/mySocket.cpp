@@ -3,20 +3,27 @@
 #include <memory>
 #include <queue>
 
-#include "../include/system_params.h"
-#include "../include/encoder.h"
 #include "../include/common.h"
-#include "../include/mySocket.h"
 
+#include "../include/encoder.h"
+#include "../include/mySocket.h"
 #include "../include/data_manager.h"
+
+#include "../include/system_params.h"
+
+
+#define PRINT_PROCEDURE(name) printf("\n%s\n", name)
+
 
 #define ON_REUSEADDR  1  //you can reuse the addr after binding addr without no waiting time 
 //#define OFF_REUSEADDR 0
 
-#define DATA 1
-#define CONTROL 2
+#define DATA_PKT 1
+#define CTRL_PKT 2
+#define STOP_PKT 3
 
-#define INIT_VAL 255
+
+#define INIT_VAL 254
 
 //global variable flag for noticing whether already received the first packet
 int Flag_AlreadRecv = 0;
@@ -27,20 +34,31 @@ extern int Terminal_AllThds;
 extern int Terminal_RecvThds;
 
 
-Transmitter::~Transmitter() {
+Transmitter::
+~Transmitter() {
 	if(sock_id > 0)
 		close(sock_id);
 }
 
-void Transmitter::Socket_for_udp() {
+void Transmitter::
+Socket_for_udp() {
 	if((sock_id = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("Create socket falied\n");
 		exit(0);
 	}
 }
 
-void Transmitter::Setsockopt(int sock_id, int level, int option_name,
-               				 void *option_value, int option_len) {
+void Transmitter::
+Socket_for_tcp() {
+	if((sock_id = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("Create socket falied\n");
+		exit(0);
+	}	
+}
+
+void Transmitter::
+Setsockopt(int sock_id, int level, int option_name,
+           void *option_value, int option_len) {
     if(-1 == setsockopt(sock_id, level, 
     	option_name, option_value, option_len)) {
         perror("setsockopt failed!\n");
@@ -48,12 +66,22 @@ void Transmitter::Setsockopt(int sock_id, int level, int option_name,
     }
 }
 
-void Transmitter::Bind(int sock_id, SA *addr_self, int len) const 
+void Transmitter::
+Bind(int sock_id, SA *addr_self, int len) const 
 {
 	if(bind(sock_id, addr_self, len)) {
 		perror("bind failed!!!");
 		exit(0);
 	}
+}
+
+//  tcp needs to establish a connections!!!
+void Transmitter::
+Connect() {
+	if(-1 == connect(sock_id, (SA *)&server_addr, sizeof(server_addr))) {
+       	perror("Connect socket failed!\n");
+        exit(0);
+ 	}
 }
 
 
@@ -65,11 +93,15 @@ transmitter_new(char *addr_self, char *port_self,
 	
 	Socket_for_udp();
 
-//enable fast recovering the port which have being used. 
+//enable fastly recover the port which just has been occupied. 
 	int state_reuseAddr              = ON_REUSEADDR;
-//	
 	Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, 
-		       &state_reuseAddr, sizeof(state_reuseAddr));
+			   &state_reuseAddr, sizeof(state_reuseAddr));
+
+//set the size of recv buffer
+	int recv_buf_size=1*1024*1024*1024;
+	Setsockopt(sock_id, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int));
+
 
 	server_addr.sin_family  = AF_INET;
 	server_addr.sin_port    = htons(atoi(port_dst));
@@ -79,10 +111,44 @@ transmitter_new(char *addr_self, char *port_self,
 	client_addr.sin_port   = htons(atoi(port_self));
 	inet_pton(AF_INET, addr_self, &(client_addr.sin_addr));
 
-	Bind(sock_id, (struct sockaddr *)&client_addr, sizeof(client_addr));
+	Bind(sock_id, (SA *)&client_addr, sizeof(client_addr));
 //  udp needn't establish any connection!!!
 //	Connect(sock_id, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));  
 }
+
+void Transmitter::
+transmitter_new_tcp_sponsor(char *addr_self, char *port_self,
+                			char *addr_dst, char *port_dst) {
+    memset(&(server_addr), 0, sizeof(server_addr));
+    memset(&(client_addr), 0, sizeof(client_addr));
+
+    Socket_for_tcp();
+
+//enable fastly recover the port which just has been occupied. 
+    int state_reuseAddr              = ON_REUSEADDR;
+    Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR,
+               &state_reuseAddr, sizeof(state_reuseAddr));
+
+//set the size of recv buffer
+    int recv_buf_size=1*1024*1024*1024;
+    Setsockopt(sock_id, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int));
+
+
+    server_addr.sin_family  = AF_INET;
+    server_addr.sin_port    = htons(atoi(port_dst));
+    inet_pton(AF_INET, addr_dst, &(server_addr.sin_addr));
+
+    client_addr.sin_family = AF_INET;
+    client_addr.sin_port   = htons(atoi(port_self));
+    inet_pton(AF_INET, addr_self, &(client_addr.sin_addr));
+
+    Bind(sock_id, (struct sockaddr *)&client_addr, sizeof(client_addr));
+
+//  tcp need to establish a connection!!!
+  	Connect();  
+}
+
+
 
 int Transmitter::
 Send_udp(char *data, int len) {
@@ -103,17 +169,49 @@ Recv_udp(char *buf_dst, int len) {
 
 	if ((num_recv = recvfrom(sock_id, buf_dst, len, 0, 
 	   (SA *)&(server_addr), &len_server_addr)) < 0) {
-		printf("\n!!!recv failed, just recv %d bytes!!!!!!\n", num_recv);
-		exit(0);
+		printf("\n!!!recv failed, just recv %d bytes!!!\n", num_recv);
+//		exit(0);
 	}
 	return num_recv;
+}
+
+
+int Transmitter::
+Send_tcp(char *data, int len) {
+	int len_sent = 0;
+	len_sent = sendto(sock_id, data, len, 0, (SA *)&server_addr,
+					  server_addr_len);
+	if(-1 == len_sent) {
+		perror("sendto failed");
+		exit(0);
+	}
+	else if(len_sent != len) {
+		printf("\nOnly send %dbytes data\n", len_sent);
+	}
+	return len_sent;
+}
+
+int Transmitter::
+Recv_tcp(char *data_dst, int len) {
+	int len_recv;
+	len_recv = recvfrom(sock_id, data_dst, len, 0, (SA *)&server_addr, 
+						&server_addr_len);
+	if(-1 == len_recv) {
+		perror("\nrecv failed\n");
+		exit(0);
+	}
+	else if(len_recv != len) {
+		printf("\nOnly recv %dbytes data\n", len_recv);
+		exit(0);
+	}
+	return len_recv;
 }
 
 
 void Transmitter::
 recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
-	affinity_set(id_core);
+	affinity_set(id_core, "recv_thread");
 
 	int cnt_pkt    = 0;
 	int cnt_symbol = 0;
@@ -123,7 +221,7 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 //	uchar symbol_id_prev = INIT_VAL;
 
 //in case of the error of no decalration
-	shared_ptr<struct Block_Data> block_data;
+	shared_ptr<struct Block_Data> block_data = nullptr;
 
 	uchar id_seg = 0; uchar id_region = 0; uchar block_id = 0; 
 	uchar symbol_id = 0; uchar s_level = 0; uchar k_fec= 0; uchar m_fec = 0;
@@ -131,42 +229,46 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
 	VData_Type packet[SYMBOL_LEN_FEC + LEN_CONTRL_MSG];
 
-	printf("\nenter the while recycle of recv_thread\n");
+	
+	PRINT_PROCEDURE("waiting to enter the while recycle of recv_thread!");
 	while(!Terminal_AllThds && !Terminal_RecvThds) {
-
+		PRINT_PROCEDURE("already entering the while recycle!");
 		memset(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 		
-		printf("wait for receiving!\n");
+		PRINT_PROCEDURE("Wait for receiving pkts!");
 		Recv_udp(packet, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 		printf("*received the %d-th packet*\n", ++cnt_pkt);
 //notice the setTimer thread to start the timer
 		if(Flag_AlreadRecv != YES) {Flag_AlreadRecv = YES;}
 
-		if(DATA == packet[0]) {
+		if(DATA_PKT == packet[0]) {
+			PRINT_PROCEDURE("DATA == packet[0]");
 			decaps_pkt(packet, id_seg, id_region, block_id, symbol_id,
 					   originBlk_size, s_level, k_fec, m_fec);
 //			if(id_seg == prev_seg_id) {
 				if(block_id != prev_block_id) {
-//psuh block_data into recvQ_data[id_path], if not the first block 
+					PRINT_PROCEDURE("block_id != prev_block_id");
+//psuh block_data into recvQ_data[id_path], if not the packet of first block 
 					if(INIT_VAL != prev_block_id) {
+						PRINT_PROCEDURE("INIT_VAL != prev_block_id");
 						block_data->cnt_s = cnt_symbol;
 						data_manager.recvQ_data[id_path].push(block_data);
 						cnt_symbol = 0;
 					}
 					prev_block_id = block_id;
 // initialize the block data ,preparing for the new block
-					shared_ptr<struct Block_Data> block_data = \
-					(shared_ptr<struct Block_Data>)new(struct Block_Data);
+					block_data = (shared_ptr<struct Block_Data>) new(struct Block_Data);
 
 					block_data->data = MALLOC(VData_Type *, 256);
-					block_data->erasure = MALLOC(int, k_fec+m_fec);
 
+					block_data->erasure = MALLOC(int, k_fec+m_fec);
 					for(int i = 0; i < k_fec + m_fec; i++) {
 						block_data->erasure[i] = LOST;
 					}
 					
-					if(s_level == 0) {block_data->S_FEC = SYMBOL_LEN_FEC;}
-					else {printf("s_level = %d,  fault happened!!!\n", s_level);}
+//					if(s_level == 0) {block_data->S_FEC = SYMBOL_LEN_FEC;}
+//					else {printf("s_level = %d,  fault happened!!!\n", s_level);}
+					block_data->S_FEC = SYMBOL_LEN_FEC;
 
 					block_data->K_FEC = k_fec;
 					block_data->M_FEC = m_fec;
@@ -174,27 +276,38 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 					block_data->id_seg = id_seg;
 					block_data->id_region = id_region;
 
-					VData_Type *symbol = MALLOC(VData_Type,block_data->S_FEC);
+					Print_BlockData(block_data);
+/*					
+					VData_Type *symbol = MALLOC(VData_Type, block_data->S_FEC);
 					memcpy(symbol, &(packet[LEN_CONTRL_MSG]), block_data->S_FEC);
 					block_data->data[cnt_symbol] = symbol;
-
+*/
 					cnt_symbol++;
+					printf("the cnt symbols is %d\n", cnt_symbol);
 					block_data->erasure[symbol_id] = GET;
+					printf("\nthe symbol_id is equal to %d\n", block_data->erasure[symbol_id]);
 				}
-
 				else {
-					VData_Type *symbol = MALLOC(VData_Type,block_data->S_FEC);
+					PRINT_PROCEDURE("else if(block_id == prev_block_id)");
+/*
+					VData_Type *symbol = MALLOC(VData_Type, block_data->S_FEC);
 					memcpy(symbol, &(packet[LEN_CONTRL_MSG]), block_data->S_FEC);
 					block_data->data[cnt_symbol] = symbol;
-
+*/					
 					cnt_symbol++;
+					printf("the cnt symbols is %d\n", cnt_symbol);
 					block_data->erasure[symbol_id] = GET;
 				}
-
-//			}
+//
+//				Print_BlockData(block_data);
 		}
-//fetch the data from send_Q, queue buffer
+		else if(STOP_PKT == packet[0]){
+			break;
+		}
 
+		else if(CTRL_PKT == packet[0]) {
+			
+		}
 	}
 }
 
@@ -209,6 +322,8 @@ void Transmitter::
 decaps_pkt(VData_Type *packet, uchar &id_seg, uchar &id_region, 
 		   uchar &block_id, uchar &symbol_id, int &originBlk_size,
 		   uchar &s_level, uchar &k_fec, uchar &m_fec) {
+	int type_pkt  = (uchar)packet[0];
+
 	id_seg    = (uchar)packet[1];
 	id_region = (uchar)packet[2];
 
@@ -222,29 +337,18 @@ decaps_pkt(VData_Type *packet, uchar &id_seg, uchar &id_region,
 	originBlk_size  = *((int *)&(packet[3]));
 //for debugging
 	printf("the packet info is:\n");
-	printf("id_seg = %d, id_region = %d, originBlk_size = %d, block_id = %d, symbol_id = %d, \
-		s_level = %d, k_fec = %d, m_fec = %d\n", id_seg, id_region, originBlk_size, \
+	printf("type_pkt = %d, id_seg = %d, id_region = %d, originBlk_size = %d, block_id = %d, symbol_id = %d, \
+		s_level = %d, k_fec = %d, m_fec = %d\n", type_pkt, id_seg, id_region, originBlk_size, \
 		block_id, symbol_id, s_level, k_fec, m_fec);
 }
-/*
-void Transmitter::encaps_packet(VData_Type *packet, int symbol_id, VData_Type *data_src, 
-								shared_ptr <struct Elem_Data> data_elem) {
-//specifies the type of packet	
-	packet[0] = DATA;
-	packet[1] = data_elem->id_path;
-	packet[2] = data_elem->id_seg;
- 	packet[3] = data_elem->size;
-	packet[4] = data_elem->type_nalu;
-	packet[5] = block_id;
-	packet[6] = symbol_id;
-	packet[7] = data_elem->K_FEC;
-//specify which one S in the current block. 
 
 
-	memcpy(&(packet[9]), data_src, data_elem->S_FEC);	
+void Transmitter::
+Print_BlockData(shared_ptr<struct Block_Data> blk) {
+	printf("The %d-th block is as following:\n", blk->block_id);
+	printf("Block( id_seg = %d, id_region = %d, S_FEC = %d, K_FEC = %d, M_FEC = %d, \
+			cnt_s = %d, originBlk_size = %d\n", blk->id_seg, blk->id_region, blk->S_FEC, blk->K_FEC, blk->M_FEC, blk->cnt_s, blk->originBlk_size);
 }
-*/
-
 
 /*
 //udp protocol doesn't neede to establish any connections!!!

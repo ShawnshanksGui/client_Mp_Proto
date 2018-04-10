@@ -15,7 +15,7 @@
 //Description: bind the current thread with an specified core  
 //Parameters:  id_core is the ID of core(for example: 0,1,2...)  
 //==========================================================================
-void affinity_set(int id_core) {
+void affinity_set(int id_core, char *thrd_name) {
     
     int       amount_core;
     cpu_set_t        mask;
@@ -46,8 +46,8 @@ void affinity_set(int id_core) {
     for(int i = 0; i < amount_core; i++) {
         if (CPU_ISSET(i, &get)) {
 //            printf("the ID of the thread is %d\n", syscall(SYS_gettid));
-            printf("this thread %ld is running on processor %d\n",
-                  syscall(SYS_gettid), i);
+            printf("this %s thread %ld is running on processor %d\n",
+                    thrd_name, syscall(SYS_gettid), i);
         }
 	}
 }
