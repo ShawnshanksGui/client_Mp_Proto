@@ -5,6 +5,7 @@
 
 
 #define START 1
+#define END   0
 #define STOP  0
 
 #define YES   1
@@ -14,10 +15,7 @@ using namespace std;
 Timer::Timer() {
 	num_timeSlice = NUM_TIMESLICE;
 	len_timeSlice = LEN_TIMESLICE;
-}
-
-//notice whether the client has already received the first packet or not  
-extern int Flag_AlreadRecv;
+}  
 
 //notice whether ought to close the current thread or not 
 extern int Terminal_AllThds;
@@ -35,15 +33,7 @@ extern int Terminal_WriterThds;
 //             the processes; 
 //==========================================================================
 void Timer::setTimer_td_func() {
-//	while(num_timeSlice--) 
-//	while(1) {
-		while(!Flag_AlreadRecv);
-		usleep(5 * len_timeSlice*1000000);
-		Terminal_AllThds = YES;
-//		startFlag_one_timeSlice = STOP;
-//		usleep(len_timeSlice*1000000);		
-//equal to YES
-//	terminalFlag =  YES;
-//	}
+	usleep(len_timeSlice * len_timeSlice * 1000000);
+	Terminal_AllThds = YES;
 }
 //==========================================================================

@@ -26,7 +26,7 @@
 #define INIT_VAL 254
 
 //global variable flag for noticing whether already received the first packet
-int Flag_AlreadRecv = 0;
+//int Flag_AlreadRecv = 0;
 
 //notice whether ought to close the current thread or not
 //global extrenal variabl for terminal flags
@@ -97,11 +97,9 @@ transmitter_new(char *addr_self, char *port_self,
 	int state_reuseAddr              = ON_REUSEADDR;
 	Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, 
 			   &state_reuseAddr, sizeof(state_reuseAddr));
-
 //set the size of recv buffer
 	int recv_buf_size=1*1024*1024*1024;
 	Setsockopt(sock_id, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int));
-
 
 	server_addr.sin_family  = AF_INET;
 	server_addr.sin_port    = htons(atoi(port_dst));
@@ -116,6 +114,7 @@ transmitter_new(char *addr_self, char *port_self,
 //	Connect(sock_id, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));  
 }
 
+//defult blocking model
 void Transmitter::
 transmitter_new_tcp_sponsor(char *addr_self, char *port_self,
                 			char *addr_dst, char *port_dst) {
@@ -128,11 +127,9 @@ transmitter_new_tcp_sponsor(char *addr_self, char *port_self,
     int state_reuseAddr              = ON_REUSEADDR;
     Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR,
                &state_reuseAddr, sizeof(state_reuseAddr));
-
 //set the size of recv buffer
     int recv_buf_size=1*1024*1024*1024;
     Setsockopt(sock_id, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int));
-
 
     server_addr.sin_family  = AF_INET;
     server_addr.sin_port    = htons(atoi(port_dst));
@@ -148,7 +145,39 @@ transmitter_new_tcp_sponsor(char *addr_self, char *port_self,
   	Connect();  
 }
 
+//set non-blocking mode
+void Transmitter::
+transmitter_new_tcp_non_b_sponsor(char *addr_self, char *port_self,
+                			char *addr_dst, char *port_dst) {
+    memset(&(server_addr), 0, sizeof(server_addr));
+    memset(&(client_addr), 0, sizeof(client_addr));
 
+    Socket_for_tcp();
+
+//set non-blocking mode
+    int flags = fcntl(sock_id, F_GETFL, 0);
+    fcntl(sock_id, F_SETFL, flags|O_NONBLOCK);
+//enable fastly recover the port which just has been occupied. 
+    int state_reuseAddr              = ON_REUSEADDR;
+    Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR,
+               &state_reuseAddr, sizeof(state_reuseAddr));
+//set the size of recv buffer
+    int recv_buf_size=1*1024*1024*1024;
+    Setsockopt(sock_id, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int));
+
+    server_addr.sin_family  = AF_INET;
+    server_addr.sin_port    = htons(atoi(port_dst));
+    inet_pton(AF_INET, addr_dst, &(server_addr.sin_addr));
+
+    client_addr.sin_family = AF_INET;
+    client_addr.sin_port   = htons(atoi(port_self));
+    inet_pton(AF_INET, addr_self, &(client_addr.sin_addr));
+
+    Bind(sock_id, (struct sockaddr *)&client_addr, sizeof(client_addr));
+
+//  tcp need to establish a connection!!!
+  	Connect();  
+}
 
 int Transmitter::
 Send_udp(char *data, int len) {
@@ -169,15 +198,86 @@ Recv_udp(char *buf_dst, int len) {
 
 	if ((num_recv = recvfrom(sock_id, buf_dst, len, 0, 
 	   (SA *)&(server_addr), &len_server_addr)) < 0) {
-		printf("\n!!!recv failed, just recv %d bytes!!!\n", num_recv);
+//		printf("\n!!!recv failed, just recv %d bytes!!!\n", num_recv);
 //		exit(0);
 	}
 	return num_recv;
 }
 
 
+//==========================================================================
 int Transmitter::
 Send_tcp(char *data, int len) {
+	int len_sent = 0;
+	len_sent = send(sock_id, data, len, 0);
+	if(-1 == len_sent) {
+		perror("sendto failed");
+		exit(0);
+	}
+	else if(len_sent != len) {
+		printf("\nOnly send %dbytes data\n", len_sent);
+	}
+	return len_sent;
+}
+
+int Transmitter::
+Recv_tcp(char *data_dst, int len) {
+	int len_recv;
+	len_recv = recv(sock_id, data_dst, len, 0);
+	if(-1 == len_recv) {
+		perror("\nrecv failed\n");
+		exit(0);
+	}
+	else if(len_recv != len) {
+//		printf("\nOnly recv %dbytes data\n", len_recv);
+//		exit(0);
+	}
+	return len_recv;
+}
+
+int Transmitter::
+Recv_tcp_fixed_len(char *data_dst, int len_specified) {
+    int cnt_len = 0;
+
+    char packet[1000+LEN_CONTRL_MSG];
+
+    while(1) {
+        cnt_len += Recv_tcp(data_dst, len_specified);
+        if(cnt_len<len_specified) {
+            len_specified = len_specified - cnt_len;
+        }
+        else {break;}
+    }
+//	printf("recv %d bytes\n", cnt_len);
+
+    return cnt_len;
+}
+
+int Transmitter::
+Recv_tcp_non_b_fixed_len(char *data_dst, int len_specified) {
+    int cnt_len = 0;
+
+    char packet[1000+LEN_CONTRL_MSG];
+
+    while(1) {
+    	if(Terminal_AllThds || Terminal_RecvThds) {
+    		break;
+    	}
+        cnt_len += Recv_tcp(data_dst, len_specified);
+        if(cnt_len<len_specified) {
+            len_specified = len_specified - cnt_len;
+        }
+        else {break;}
+    }
+//	printf("recv %d bytes\n", cnt_len);
+
+    return cnt_len;
+}
+
+
+
+int Transmitter::
+Sendto_tcp(char *data, int len) {
 	int len_sent = 0;
 	len_sent = sendto(sock_id, data, len, 0, (SA *)&server_addr,
 					  server_addr_len);
@@ -192,7 +292,7 @@ Send_tcp(char *data, int len) {
 }
 
 int Transmitter::
-Recv_tcp(char *data_dst, int len) {
+Recvfrom_tcp(char *data_dst, int len) {
 	int len_recv;
 	len_recv = recvfrom(sock_id, data_dst, len, 0, (SA *)&server_addr, 
 						&server_addr_len);
@@ -201,8 +301,7 @@ Recv_tcp(char *data_dst, int len) {
 		exit(0);
 	}
 	else if(len_recv != len) {
-		printf("\nOnly recv %dbytes data\n", len_recv);
-		exit(0);
+//		printf("\nOnly recv %dbytes data\n", len_recv);
 	}
 	return len_recv;
 }
@@ -231,16 +330,19 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 
 	
 	PRINT_PROCEDURE("waiting to enter the while recycle of recv_thread!");
-	while(!Terminal_AllThds && !Terminal_RecvThds) {
+	while(1) {
 		PRINT_PROCEDURE("already entering the while recycle!");
 		memset(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 		
 		PRINT_PROCEDURE("Wait for receiving pkts!");
-		Recv_udp(packet, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
+		Recv_tcp_non_b_fixed_len(packet, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 		printf("*received the %d-th packet*\n", ++cnt_pkt);
-//notice the setTimer thread to start the timer
-		if(Flag_AlreadRecv != YES) {Flag_AlreadRecv = YES;}
 
+		if(Terminal_AllThds || Terminal_RecvThds) {
+			break;
+		}
+//notice the setTimer thread to start the timer
+//		if(Flag_AlreadRecv != YES) {Flag_AlreadRecv = YES;}
 		if(DATA_PKT == packet[0]) {
 			PRINT_PROCEDURE("DATA == packet[0]");
 			decaps_pkt(packet, id_seg, id_region, block_id, symbol_id,

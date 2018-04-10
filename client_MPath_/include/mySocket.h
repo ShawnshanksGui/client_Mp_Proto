@@ -52,6 +52,8 @@ public:
 
 	void transmitter_new_tcp_sponsor(char *addr_self, char *port_self,
                 					 char *addr_dst, char *port_dst);
+	void transmitter_new_tcp_non_b_sponsor(char *addr_self, char *port_self,
+                					  	   char *addr_dst, char *port_dst);
 
 	void recv_td_func(int id_core, int id_path, Data_Manager &data_smanager);
 
@@ -61,11 +63,18 @@ public:
 					uchar &block_id, uchar &symbol_id, int &originBlk_size,
 					uchar &s_level, uchar &k_fec, uchar &m_fec); 
 
-	int Send_udp(char *data, int len);
-	int Recv_udp(char *buf_dst, int len);
+	int Send_udp(char *data_src, int len);
+	int Recv_udp(char *data_dst, int len);
 
-	int Send_tcp(char *data, int len);
+	int Send_tcp(char *data_src, int len);
+
+	int Recv_tcp_fixed_len(char *data_dst, int len_specified);
+	int Recv_tcp_non_b_fixed_len(char *data_dst, int len_specified);
+
 	int Recv_tcp(char *data_dst, int len);
+
+	int Sendto_tcp(char *data_src, int len);
+	int Recvfrom_tcp(char *data_dst, int len);
 
 	void Print_BlockData(shared_ptr<struct Block_Data> blk);
 };

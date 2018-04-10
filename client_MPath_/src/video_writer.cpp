@@ -54,8 +54,12 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
 
 		   		char *out_path_cStr=(char *)new char[outputVideo_path.length()+1];
    				strcpy(out_path_cStr, outputVideo_path.c_str());
-
+   				
+   				if(nullptr != fp[cur_id_region][cur_id_seg%2]) {
+   					fclose(fp[cur_id_region][cur_id_seg%2]);
+   				}
 				Fopen_for_write(&(fp[cur_id_region][cur_id_seg%2]), out_path_cStr);
+				
 				delete [] out_path_cStr;
 //================================================================================
 			}
