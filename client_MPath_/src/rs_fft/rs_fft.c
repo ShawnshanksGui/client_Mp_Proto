@@ -272,6 +272,7 @@ void *encode_FFT_RS(char *data_src, struct Param_Encd param_encd) {
 //       and actually both S and K are upper cases,
 //       decode one element every time stored in 'elem_procs' temporarily.
 //==========================================================================
+/*
 void *decode_FFT_RS(struct Data_Remain data_remain, 
 	                struct Param_Decd param_decd) {
 //Array indicating erasures
@@ -308,12 +309,57 @@ void *decode_FFT_RS(struct Data_Remain data_remain,
 		}		
 	}
 
-//#ifdef ENABLE_DEBUG_RS_FFT
+#ifdef ENABLE_DEBUG_RS_FFT
 	printf("recovery data is:\n%s\n\n", data_dst);
-//#endif
+#endif
 
 	return data_dst;
 }
+*/
+
+void *decode_FFT_RS(struct Data_Remain data_remain, 
+	                struct Param_Decd param_decd) {
+//Array indicating erasures
+	Indicator_Type    erasure_a[Size]  = {0};
+	char     elem_procs[Size] = {'\0'};
+	GFSymbol log_walsh2[Size] = {'\0'};
+
+	char     *data_dst        = MALLOC(char, param_decd.K*param_decd.S);
+
+	for(int i = 0; i < Size; i++) {
+		erasure_a[i] = data_remain.erasure[i];
+	}
+	decode_init(erasure_a, log_walsh2);//Evaluate error locator polynomial
+
+	for(int i = 0; i < param_decd.S; i++) {
+		for(int j = 0; j < Size; j++) {
+			if(GET == erasure_a[j]) {
+			//copy data from data_remain to elem_procs if GET
+				elem_procs[j] = data_remain.data[j][i];
+			//(1)copy the data which is'nt lost,from data_remain to data_destination
+				if(j >= (Size - param_decd.K)) {
+					data_dst[(j-(Size - param_decd.K))*param_decd.S+i] = data_remain.data[j][i];
+				}
+			}
+			else {elem_procs[j] = 0;} //keep default value if LOST
+		}
+		//----------main processing fucntion-----------
+		decode_main(elem_procs, erasure_a, log_walsh2);
+		//(2)copy the data recovered from elem_procs to data_destination
+		for(int j = (Size - param_decd.K); j < Size; j++) {
+			if(LOST == erasure_a[j]) {
+				data_dst[(j-(Size - param_decd.K))*param_decd.S+i] = elem_procs[j];
+			}
+		}		
+	}
+
+#ifdef ENABLE_DEBUG_RS_FFT
+	printf("recovery data is:\n%s\n\n", data_dst);
+#endif
+
+	return data_dst;
+}
+
 //==========================================================================
 
 

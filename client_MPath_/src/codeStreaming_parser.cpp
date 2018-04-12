@@ -16,7 +16,7 @@ using namespace std;
 #ifdef ENABLE_DEBUG_PARSER
 #define REGION_NUM 3
 #define GOP_NUM    2
-#define FRAME_GOP 30
+#define FRAME_GOP 31
 
 //the intra pridicted frame
 #define I_FRAME 1

@@ -6,7 +6,6 @@
 #include "poll.h"
 #include "../include/common.h"
 
-#include "../include/encoder.h"
 #include "../include/mySocket.h"
 #include "../include/data_manager.h"
 

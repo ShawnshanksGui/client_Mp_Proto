@@ -66,7 +66,11 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
 			}
 //write the data of the currentn block into file, which file descripter 
 //is fp[cur_id_region][cur_id_seg%2]);)
-			printf("\nthe block decd data is as following:\n, %s\n", block_decd->data_decd);			
+//			printf("\nthe block decd data is as following:\n%s\n", block_decd->data_decd);	
+			printf("\nthe block decd data is as following:\n");
+			for(int i = 0; i< block_decd->len_remain_data; i++) {
+				printf("%c", block_decd->data_decd[i]);
+			}
 			Fwrite(block_decd->data_decd, block_decd->len_remain_data, \
 					   fp[cur_id_region][cur_id_seg%2]);
 			
