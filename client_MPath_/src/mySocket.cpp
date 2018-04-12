@@ -3,6 +3,7 @@
 #include <memory>
 #include <queue>
 
+#include "poll.h"
 #include "../include/common.h"
 
 #include "../include/encoder.h"
@@ -20,7 +21,8 @@
 
 #define DATA_PKT 1
 #define CTRL_PKT 2
-#define STOP_PKT 3
+
+#define STOP_PKT 0
 
 
 #define INIT_VAL 254
@@ -69,7 +71,7 @@ Setsockopt(int sock_id, int level, int option_name,
 void Transmitter::
 Bind(int sock_id, SA *addr_self, int len) const 
 {
-	if(bind(sock_id, addr_self, len)) {
+	if(-1 == bind(sock_id, addr_self, len)) {
 		perror("bind failed!!!");
 		exit(0);
 	}
@@ -78,12 +80,107 @@ Bind(int sock_id, SA *addr_self, int len) const
 //  tcp needs to establish a connections!!!
 void Transmitter::
 Connect() {
-	if(-1 == connect(sock_id, (SA *)&server_addr, sizeof(server_addr))) {
-       	perror("Connect socket failed!\n");
-        exit(0);
+	if(connect(sock_id, (SA *)&server_addr, sizeof(server_addr)) < 0) {
+    	if(errno != EINPROGRESS) { 
+	  		perror("Connect socket failed!\n");
+        	exit(0);
+		}
+		else{
+			perror("connect");
+			printf("check delay connection\n");
+			CheckConnect(sock_id);			
+		}	
  	}
 }
 
+
+void Transmitter::
+Connect_non_b() {
+		int nsec = 10;
+        int flags, n, error, code;  
+        socklen_t len;  
+        fd_set wset;  
+        struct timeval tval;  
+      
+        flags = fcntl(sock_id, F_GETFL, 0);  
+        fcntl(sock_id, F_SETFL, flags | O_NONBLOCK);  
+      
+        error = 0;  
+        if ((n == connect(sock_id, (SA *)&server_addr, sizeof(server_addr))) == 0) {  
+            goto done;  
+        } else if (n < 0 && errno != EINPROGRESS){  
+	  		perror("Connect socket failed!\n");
+        	exit(0);  
+        }  
+      
+        /* Do whatever we want while the connect is taking place */  
+      
+        FD_ZERO(&wset);  
+        FD_SET(sock_id, &wset);  
+        tval.tv_sec = nsec;  
+        tval.tv_usec = 0;  
+      
+        if ((n = select(sock_id+1, NULL, &wset,   
+                        NULL, nsec ? &tval : NULL)) == 0) {  
+            close(sock_id);  /* timeout */  
+	  		perror("Connect socket failed, timeout!\n");
+        	exit(0);
+        }  
+      
+        if (FD_ISSET(sock_id, &wset)) {  
+            len = sizeof(error);  
+            code = getsockopt(sock_id, SOL_SOCKET, SO_ERROR, &error, &len);  
+     
+            if (code < 0 || error) {  
+                close(sock_id);  
+                if (error)   
+                    errno = error;  
+	  			perror("Connect socket failed!\n");
+        		exit(0);
+            }  
+        }
+        else {  
+            fprintf(stderr, "select error: sock_id not set");  
+            exit(0);  
+        }  
+      
+    done:  
+        fcntl(sock_id, F_SETFL, flags);  /* restore file status flags */   
+}
+
+int Transmitter::
+CheckConnect(int iSocket) {
+	struct pollfd fd;
+	int ret = 0;
+	socklen_t len = 0;
+
+	fd.fd = iSocket;
+	fd.events = POLLOUT;
+
+	while ( poll (&fd, 1, -1) == -1 ) {
+		if( errno != EINTR ){
+			perror("poll");
+//			return -1;
+			exit(0);
+		}
+	}
+
+	len = sizeof(ret);
+	if ( getsockopt (iSocket, SOL_SOCKET, SO_ERROR, &ret, &len) == -1 ) {
+    	perror("getsockopt");
+//		return -1;
+		exit(0);
+	}
+
+	if(ret != 0) {
+		fprintf (stderr, "socket %d connect failed: %s\n",
+                 iSocket, strerror (ret));
+//		return -1;
+		exit(0);
+	}
+
+	return 0;
+}
 
 void Transmitter::
 transmitter_new(char *addr_self, char *port_self, 
@@ -155,8 +252,9 @@ transmitter_new_tcp_non_b_sponsor(char *addr_self, char *port_self,
     Socket_for_tcp();
 
 //set non-blocking mode
-    int flags = fcntl(sock_id, F_GETFL, 0);
-    fcntl(sock_id, F_SETFL, flags|O_NONBLOCK);
+//    int flags = fcntl(sock_id, F_GETFL, 0);
+//    fcntl(sock_id, F_SETFL, flags|O_NONBLOCK);
+
 //enable fastly recover the port which just has been occupied. 
     int state_reuseAddr              = ON_REUSEADDR;
     Setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR,
@@ -176,7 +274,7 @@ transmitter_new_tcp_non_b_sponsor(char *addr_self, char *port_self,
     Bind(sock_id, (struct sockaddr *)&client_addr, sizeof(client_addr));
 
 //  tcp need to establish a connection!!!
-  	Connect();  
+  	Connect_non_b();  
 }
 
 int Transmitter::
@@ -211,7 +309,7 @@ Send_tcp(char *data, int len) {
 	int len_sent = 0;
 	len_sent = send(sock_id, data, len, 0);
 	if(-1 == len_sent) {
-		perror("sendto failed");
+		perror("send failed");
 		exit(0);
 	}
 	else if(len_sent != len) {
@@ -220,6 +318,7 @@ Send_tcp(char *data, int len) {
 	return len_sent;
 }
 
+//default blocking mode
 int Transmitter::
 Recv_tcp(char *data_dst, int len) {
 	int len_recv;
@@ -235,45 +334,119 @@ Recv_tcp(char *data_dst, int len) {
 	return len_recv;
 }
 
+//set non_blocking mode
 int Transmitter::
-Recv_tcp_fixed_len(char *data_dst, int len_specified) {
-    int cnt_len = 0;
+Recv_tcp_non_b(char *data_dst, int len) {
+//	int len_recv;
+//	len_recv = recv(sock_id, data_dst, len, MSG_DONTWAIT);
+	int tmp = 0;
 
-    char packet[1000+LEN_CONTRL_MSG];
-
-    while(1) {
-        cnt_len += Recv_tcp(data_dst, len_specified);
-        if(cnt_len<len_specified) {
-            len_specified = len_specified - cnt_len;
+	while(1) {
+        if(Terminal_AllThds || Terminal_RecvThds) {
+            break;
         }
-        else {break;}
-    }
-//	printf("recv %d bytes\n", cnt_len);
 
-    return cnt_len;
+//		printf("start enter the recv func\n");
+//		tmp = recv(sock_id, data_dst, len, MSG_DONTWAIT);
+		tmp = recv(sock_id, data_dst, len, MSG_DONTWAIT);
+//		printf("leave the recv func\n");
+
+		if(tmp < 0) {
+			if(errno == EAGAIN) {
+				usleep(1000);
+				continue;
+			}
+			else {
+				perror("receive failed in Recv_tcp_non_b!\n");
+				exit(0);
+			}
+		}
+		else {
+			return tmp;
+		}
+	}
+
+	return tmp;
 }
 
 int Transmitter::
-Recv_tcp_non_b_fixed_len(char *data_dst, int len_specified) {
-    int cnt_len = 0;
-
-    char packet[1000+LEN_CONTRL_MSG];
+Recv_tcp_fixed_len(char *data_dst, int len) {
+    int tmp = 0;
+    char *loc = data_dst;
+    int len_specified = len;
 
     while(1) {
     	if(Terminal_AllThds || Terminal_RecvThds) {
     		break;
     	}
-        cnt_len += Recv_tcp(data_dst, len_specified);
-        if(cnt_len<len_specified) {
-            len_specified = len_specified - cnt_len;
+        tmp = Recv_tcp(loc, len_specified);
+        if(tmp < len_specified) {
+            len_specified -= tmp;
+            loc += tmp;
         }
         else {break;}
     }
-//	printf("recv %d bytes\n", cnt_len);
 
-    return cnt_len;
+    return len;
 }
 
+int Transmitter::
+Recv_tcp_non_b_fixed_len(char *data_dst, int len) {
+    int tmp = 0;
+    char *loc = data_dst;
+    int len_specified = len;
+
+//    printf("\n\n");
+//    printf("already enter once the Recv_tcp_non_b_fixed_len\n");
+    while(1) {
+//		printf("already enter the Recv_tcp_non_b_fixed_len while\n");
+    	if(Terminal_AllThds || Terminal_RecvThds) {
+    		break;
+    	}
+//    	printf("%d ", len_specified);
+//		printf("start entering  Recv_tcp_non_b\n");
+    	tmp = 0;
+//        tmp = recv(sock_id, loc, len_specified, MSG_DONTWAIT);
+		tmp = recv(sock_id, loc, len_specified, 0);
+//		printf("leave the Recv_tcp_non_b\n");
+        if(tmp < 0) {
+        	if(errno == EAGAIN) {
+        		usleep(50);
+        		continue;
+        	}
+        	else {
+ 				perror("receive failed in Recv_tcp_non_b!\n");
+				exit(0);       		
+        	}
+        }
+        else if(tmp == len_specified) {
+/*
+			if(len != len_specified) {
+				printf("  ");
+				for(int i = 0; i < len_specified; i++) {
+					printf("%c", *(loc+i));
+				}
+				printf("\n");
+			}
+*/
+        	break;
+        }
+        
+        if(tmp >= 0) {
+/*
+            printf("  ");
+            for(int i = 0; i < tmp; i++) {
+                printf("%c", *(loc+i));
+            }   
+*/
+   	    	len_specified -= tmp;
+        	loc += tmp;
+    	}
+    }
+//	printf("\nrecv %d bytes\n", len);
+
+    return len;
+}
 
 
 int Transmitter::
@@ -315,6 +488,9 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 	int cnt_pkt    = 0;
 	int cnt_symbol = 0;
 	
+	int cnt_codeSym = 0;
+	int cnt_dataSym = 0;
+
 //	uchar prev_seg_id    = INIT_VAL;
 	uchar prev_block_id  = INIT_VAL;
 //	uchar symbol_id_prev = INIT_VAL;
@@ -329,14 +505,14 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 	VData_Type packet[SYMBOL_LEN_FEC + LEN_CONTRL_MSG];
 
 	
-	PRINT_PROCEDURE("waiting to enter the while recycle of recv_thread!");
+//	PRINT_PROCEDURE("waiting to enter the while recycle of recv_thread!");
 	while(1) {
-		PRINT_PROCEDURE("already entering the while recycle!");
+//		PRINT_PROCEDURE("already entering the while recycle!");
 		memset(packet, 0, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
 		
-		PRINT_PROCEDURE("Wait for receiving pkts!");
+//		PRINT_PROCEDURE("Wait for receiving pkts!");
 		Recv_tcp_non_b_fixed_len(packet, SYMBOL_LEN_FEC + LEN_CONTRL_MSG);
-		printf("*received the %d-th packet*\n", ++cnt_pkt);
+//		printf("*received the %d-th packet*\n", ++cnt_pkt);
 
 		if(Terminal_AllThds || Terminal_RecvThds) {
 			break;
@@ -344,17 +520,28 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 //notice the setTimer thread to start the timer
 //		if(Flag_AlreadRecv != YES) {Flag_AlreadRecv = YES;}
 		if(DATA_PKT == packet[0]) {
-			PRINT_PROCEDURE("DATA == packet[0]");
+//			PRINT_PROCEDURE("DATA == packet[0]");
 			decaps_pkt(packet, id_seg, id_region, block_id, symbol_id,
 					   originBlk_size, s_level, k_fec, m_fec);
 //			if(id_seg == prev_seg_id) {
 				if(block_id != prev_block_id) {
-					PRINT_PROCEDURE("block_id != prev_block_id");
+//					PRINT_PROCEDURE("block_id != prev_block_id");
 //psuh block_data into recvQ_data[id_path], if not the packet of first block 
 					if(INIT_VAL != prev_block_id) {
-						PRINT_PROCEDURE("INIT_VAL != prev_block_id");
+//						PRINT_PROCEDURE("INIT_VAL != prev_block_id");
 						block_data->cnt_s = cnt_symbol;
 						data_manager.recvQ_data[id_path].push(block_data);
+						printf("successfully pushed a block data into recvQ\n");
+/*
+						printf("pushed data is as folowing:\n");
+						for(int i = 0; i < cnt_symbol; i++) {
+							for(int k = 0; k < block_data->S_FEC; k++) {
+								printf("%c", block_data->data[i][k]);
+							}
+						}
+						printf("\n");
+*/
+						Print_BlockData(block_data);	
 						cnt_symbol = 0;
 					}
 					prev_block_id = block_id;
@@ -370,6 +557,8 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 					
 //					if(s_level == 0) {block_data->S_FEC = SYMBOL_LEN_FEC;}
 //					else {printf("s_level = %d,  fault happened!!!\n", s_level);}
+					block_data->block_id = block_id;
+					
 					block_data->S_FEC = SYMBOL_LEN_FEC;
 
 					block_data->K_FEC = k_fec;
@@ -378,32 +567,32 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 					block_data->id_seg = id_seg;
 					block_data->id_region = id_region;
 
-					Print_BlockData(block_data);
-/*					
+//					Print_BlockData(block_data);
+					
 					VData_Type *symbol = MALLOC(VData_Type, block_data->S_FEC);
 					memcpy(symbol, &(packet[LEN_CONTRL_MSG]), block_data->S_FEC);
 					block_data->data[cnt_symbol] = symbol;
-*/
+
 					cnt_symbol++;
-					printf("the cnt symbols is %d\n", cnt_symbol);
+//					printf("the cnt symbols is %d\n", cnt_symbol);
 					block_data->erasure[symbol_id] = GET;
-					printf("\nthe symbol_id is equal to %d\n", block_data->erasure[symbol_id]);
+//					printf("\nthe symbol_id is equal to %d\n", block_data->erasure[symbol_id]);
 				}
 				else {
-					PRINT_PROCEDURE("else if(block_id == prev_block_id)");
-/*
+//					PRINT_PROCEDURE("else if(block_id == prev_block_id)");
 					VData_Type *symbol = MALLOC(VData_Type, block_data->S_FEC);
 					memcpy(symbol, &(packet[LEN_CONTRL_MSG]), block_data->S_FEC);
 					block_data->data[cnt_symbol] = symbol;
-*/					
+					
 					cnt_symbol++;
-					printf("the cnt symbols is %d\n", cnt_symbol);
+//					printf("the cnt symbols is %d\n", cnt_symbol);
 					block_data->erasure[symbol_id] = GET;
 				}
 //
 //				Print_BlockData(block_data);
 		}
 		else if(STOP_PKT == packet[0]){
+			printf("already received a VSegment terminal packet\n");
 			break;
 		}
 
@@ -411,6 +600,11 @@ recv_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 			
 		}
 	}
+//push the last one into recv queue!!!	
+	block_data->cnt_s = cnt_symbol;
+	data_manager.recvQ_data[id_path].push(block_data);
+	printf("successfully pushed a block data into recvQ\n");
+	Print_BlockData(block_data);
 }
 
 //==========================================================================
@@ -438,10 +632,12 @@ decaps_pkt(VData_Type *packet, uchar &id_seg, uchar &id_region,
 	
 	originBlk_size  = *((int *)&(packet[3]));
 //for debugging
+/*
 	printf("the packet info is:\n");
 	printf("type_pkt = %d, id_seg = %d, id_region = %d, originBlk_size = %d, block_id = %d, symbol_id = %d, \
 		s_level = %d, k_fec = %d, m_fec = %d\n", type_pkt, id_seg, id_region, originBlk_size, \
 		block_id, symbol_id, s_level, k_fec, m_fec);
+*/
 }
 
 
@@ -450,6 +646,11 @@ Print_BlockData(shared_ptr<struct Block_Data> blk) {
 	printf("The %d-th block is as following:\n", blk->block_id);
 	printf("Block( id_seg = %d, id_region = %d, S_FEC = %d, K_FEC = %d, M_FEC = %d, \
 			cnt_s = %d, originBlk_size = %d\n", blk->id_seg, blk->id_region, blk->S_FEC, blk->K_FEC, blk->M_FEC, blk->cnt_s, blk->originBlk_size);
+	printf("\nthe erasure array is as following:\n");
+	for(int i = 0; i < (blk->K_FEC+blk->M_FEC); i++) {
+		printf("%d ", blk->erasure[i]);
+	}
+	printf("\n");
 }
 
 /*

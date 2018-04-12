@@ -111,17 +111,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test_writer
+# Target rules for targets named test
 
 # Build rule for target.
-test_writer: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test_writer
-.PHONY : test_writer
+test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test
+.PHONY : test
 
 # fast build rule for target.
-test_writer/fast:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/build
-.PHONY : test_writer/fast
+test/fast:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/build
+.PHONY : test/fast
 
 #=============================================================================
 # Target rules for targets named RS_FFT
@@ -142,7 +142,7 @@ data_manager.o: data_manager.cpp.o
 
 # target to build an object file
 data_manager.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/data_manager.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/data_manager.cpp.o
 .PHONY : data_manager.cpp.o
 
 data_manager.i: data_manager.cpp.i
@@ -151,7 +151,7 @@ data_manager.i: data_manager.cpp.i
 
 # target to preprocess a source file
 data_manager.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/data_manager.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/data_manager.cpp.i
 .PHONY : data_manager.cpp.i
 
 data_manager.s: data_manager.cpp.s
@@ -160,7 +160,7 @@ data_manager.s: data_manager.cpp.s
 
 # target to generate assembly for a file
 data_manager.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/data_manager.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/data_manager.cpp.s
 .PHONY : data_manager.cpp.s
 
 decoder.o: decoder.cpp.o
@@ -169,7 +169,7 @@ decoder.o: decoder.cpp.o
 
 # target to build an object file
 decoder.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/decoder.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/decoder.cpp.o
 .PHONY : decoder.cpp.o
 
 decoder.i: decoder.cpp.i
@@ -178,7 +178,7 @@ decoder.i: decoder.cpp.i
 
 # target to preprocess a source file
 decoder.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/decoder.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/decoder.cpp.i
 .PHONY : decoder.cpp.i
 
 decoder.s: decoder.cpp.s
@@ -187,7 +187,7 @@ decoder.s: decoder.cpp.s
 
 # target to generate assembly for a file
 decoder.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/decoder.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/decoder.cpp.s
 .PHONY : decoder.cpp.s
 
 main.o: main.cpp.o
@@ -196,7 +196,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/main.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -205,7 +205,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/main.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -214,7 +214,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/main.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 mySocket.o: mySocket.cpp.o
@@ -223,7 +223,7 @@ mySocket.o: mySocket.cpp.o
 
 # target to build an object file
 mySocket.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/mySocket.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/mySocket.cpp.o
 .PHONY : mySocket.cpp.o
 
 mySocket.i: mySocket.cpp.i
@@ -232,7 +232,7 @@ mySocket.i: mySocket.cpp.i
 
 # target to preprocess a source file
 mySocket.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/mySocket.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/mySocket.cpp.i
 .PHONY : mySocket.cpp.i
 
 mySocket.s: mySocket.cpp.s
@@ -241,7 +241,7 @@ mySocket.s: mySocket.cpp.s
 
 # target to generate assembly for a file
 mySocket.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/mySocket.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/mySocket.cpp.s
 .PHONY : mySocket.cpp.s
 
 myUtility.o: myUtility.cpp.o
@@ -250,7 +250,7 @@ myUtility.o: myUtility.cpp.o
 
 # target to build an object file
 myUtility.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/myUtility.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/myUtility.cpp.o
 .PHONY : myUtility.cpp.o
 
 myUtility.i: myUtility.cpp.i
@@ -259,7 +259,7 @@ myUtility.i: myUtility.cpp.i
 
 # target to preprocess a source file
 myUtility.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/myUtility.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/myUtility.cpp.i
 .PHONY : myUtility.cpp.i
 
 myUtility.s: myUtility.cpp.s
@@ -268,7 +268,7 @@ myUtility.s: myUtility.cpp.s
 
 # target to generate assembly for a file
 myUtility.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/myUtility.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/myUtility.cpp.s
 .PHONY : myUtility.cpp.s
 
 thread_core_affinity_set.o: thread_core_affinity_set.cpp.o
@@ -277,7 +277,7 @@ thread_core_affinity_set.o: thread_core_affinity_set.cpp.o
 
 # target to build an object file
 thread_core_affinity_set.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/thread_core_affinity_set.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/thread_core_affinity_set.cpp.o
 .PHONY : thread_core_affinity_set.cpp.o
 
 thread_core_affinity_set.i: thread_core_affinity_set.cpp.i
@@ -286,7 +286,7 @@ thread_core_affinity_set.i: thread_core_affinity_set.cpp.i
 
 # target to preprocess a source file
 thread_core_affinity_set.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/thread_core_affinity_set.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/thread_core_affinity_set.cpp.i
 .PHONY : thread_core_affinity_set.cpp.i
 
 thread_core_affinity_set.s: thread_core_affinity_set.cpp.s
@@ -295,7 +295,7 @@ thread_core_affinity_set.s: thread_core_affinity_set.cpp.s
 
 # target to generate assembly for a file
 thread_core_affinity_set.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/thread_core_affinity_set.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/thread_core_affinity_set.cpp.s
 .PHONY : thread_core_affinity_set.cpp.s
 
 timer.o: timer.cpp.o
@@ -304,7 +304,7 @@ timer.o: timer.cpp.o
 
 # target to build an object file
 timer.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/timer.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/timer.cpp.o
 .PHONY : timer.cpp.o
 
 timer.i: timer.cpp.i
@@ -313,7 +313,7 @@ timer.i: timer.cpp.i
 
 # target to preprocess a source file
 timer.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/timer.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/timer.cpp.i
 .PHONY : timer.cpp.i
 
 timer.s: timer.cpp.s
@@ -322,7 +322,7 @@ timer.s: timer.cpp.s
 
 # target to generate assembly for a file
 timer.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/timer.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/timer.cpp.s
 .PHONY : timer.cpp.s
 
 video_writer.o: video_writer.cpp.o
@@ -331,7 +331,7 @@ video_writer.o: video_writer.cpp.o
 
 # target to build an object file
 video_writer.cpp.o:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/video_writer.cpp.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/video_writer.cpp.o
 .PHONY : video_writer.cpp.o
 
 video_writer.i: video_writer.cpp.i
@@ -340,7 +340,7 @@ video_writer.i: video_writer.cpp.i
 
 # target to preprocess a source file
 video_writer.cpp.i:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/video_writer.cpp.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/video_writer.cpp.i
 .PHONY : video_writer.cpp.i
 
 video_writer.s: video_writer.cpp.s
@@ -349,7 +349,7 @@ video_writer.s: video_writer.cpp.s
 
 # target to generate assembly for a file
 video_writer.cpp.s:
-	$(MAKE) -f CMakeFiles/test_writer.dir/build.make CMakeFiles/test_writer.dir/video_writer.cpp.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/video_writer.cpp.s
 .PHONY : video_writer.cpp.s
 
 # Help Target
@@ -360,7 +360,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... test_writer"
+	@echo "... test"
 	@echo "... RS_FFT"
 	@echo "... data_manager.o"
 	@echo "... data_manager.i"

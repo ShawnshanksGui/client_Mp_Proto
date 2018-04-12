@@ -33,7 +33,7 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
 							   {nullptr, nullptr}};
 
 	while(!Terminal_AllThds && !Terminal_WriterThds) {
-
+//		printf("\nalready enter the video_writer's while recycle\n");
 		if(data_manager.decdQ_data[id_path].size() > 0) {
 
 			shared_ptr<struct Block_Decd> block_decd = \
@@ -47,8 +47,9 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
 				prev_id_seg_arr[cur_id_region][cur_id_seg%2] = cur_id_seg;
 //create and open a new file.
 //================================================================================
-				string outputVideo_path;
-				outputVideo_path = "~/360video_received/len_seg_"+to_string(len_seg) \
+				string outputVideo_path = "result.265";
+				
+//				outputVideo_path = "./360video_received/len_seg_"+to_string(len_seg) \
 								    + "s/seg_" + to_string(cur_id_seg) + "_region_"\
 								    + to_string(cur_id_region) + ".265";
 
@@ -59,16 +60,26 @@ video_writer_td_func(int id_path, Data_Manager &data_manager) {
    					fclose(fp[cur_id_region][cur_id_seg%2]);
    				}
 				Fopen_for_write(&(fp[cur_id_region][cur_id_seg%2]), out_path_cStr);
-				
+				printf("\nsuccesfully open a file\n");				
 				delete [] out_path_cStr;
 //================================================================================
 			}
 //write the data of the currentn block into file, which file descripter 
 //is fp[cur_id_region][cur_id_seg%2]);)
+			printf("\nthe block decd data is as following:\n, %s\n", block_decd->data_decd);			
 			Fwrite(block_decd->data_decd, block_decd->len_remain_data, \
 					   fp[cur_id_region][cur_id_seg%2]);
-
+			
+			printf("\nsuccessully write %d bytes into file\n", block_decd->len_remain_data);
 			SAFE_FREE(block_decd->data_decd);	
+		}
+	}
+
+	for(int i = 0; i < REGION_NUM; i++) {
+		for(int k = 0; k < 2; k++) {
+   			if(nullptr != fp[i][k]) {
+   				fclose(fp[i][k]);
+   			}			
 		}
 	}
 }

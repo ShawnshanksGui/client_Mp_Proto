@@ -10,6 +10,8 @@ Lin, Han and Chung, "Novel Polynomial Basis and Its Application to Reed-Solomon 
 #include <string.h>
 #include <time.h>
 #include <stdint.h>
+#include <assert.h>
+
 #include "../../include/rs_fft.h"
 
 #define GET  0 //Packet received successfully
@@ -28,8 +30,6 @@ GFSymbol mask = 0x2D;//x^16 + x^5 + x^3 + x^2 + 1
 GFSymbol Base[len] = {1, 44234, 15374, 5694, 50562, 60718, 37196, 16402, 27800, 4312, 27250, 47360, 64952, 64308, 65336, 39198};//Cantor basis
 */
 
-//for debugging
-//#define ENABLE_DEBUG_RS_FFT
 
 #define Size (1<<len)//Field size
 #define mod (Size-1)
@@ -344,12 +344,12 @@ void *fft_decode(char **recv_data, int *erasure, int S, int K){
 	param_decd.K = K;
 
 	for(int i = 0; i < Size; i++) {
-		data_remain.erasure[i] = LOST; //LOST = 0
+		data_remain.erasure[i] = LOST; //LOST = 1
 	}
 
 	for(int i = 0, k = 0; i < Size; i++) {
 		if(GET == erasure[i]) {
-			data_remain.erasure[i] = GET;  //GET = 1
+			data_remain.erasure[i] = GET;  //GET = 0
 			memcpy(data_remain.data[i], recv_data[k], S);
 			k++;
 		}

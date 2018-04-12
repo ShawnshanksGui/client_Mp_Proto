@@ -41,6 +41,9 @@ public:
 	void Bind(int, SA *, int) const;
 
 	void Connect();
+	int CheckConnect(int iSocket);
+
+	void Connect_non_b();
 
 //	Transmitter(int, struct sockaddr_in, struct sockaddr_in);
 	Transmitter() {}
@@ -67,11 +70,13 @@ public:
 	int Recv_udp(char *data_dst, int len);
 
 	int Send_tcp(char *data_src, int len);
+	int Recv_tcp(char *data_dst, int len);
+	
+	int Recv_tcp_non_b(char *data_dst, int len);
 
 	int Recv_tcp_fixed_len(char *data_dst, int len_specified);
-	int Recv_tcp_non_b_fixed_len(char *data_dst, int len_specified);
+	int Recv_tcp_non_b_fixed_len(char *data_dst, int len_specified);	
 
-	int Recv_tcp(char *data_dst, int len);
 
 	int Sendto_tcp(char *data_src, int len);
 	int Recvfrom_tcp(char *data_dst, int len);

@@ -65,15 +65,16 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 	
 	while(!Terminal_AllThds && !Terminal_DecdThds) {
 //fetch one block from queue_recv. 
-		if(data_manager.decdQ_data[id_path].size() > 0) {
+		if(data_manager.recvQ_data[id_path].size() > 0) {
 			shared_ptr<struct Block_Data> block_data = \
 			data_manager.recvQ_data[id_path].front();
 			data_manager.recvQ_data[id_path].pop();
 			if(block_data->cnt_s < block_data->K_FEC) {
+				printf("the cnt_s is %d\n", block_data->cnt_s);
 //				void ** result_arr;			
 				struct Ret_Val result;
 				result = extract_origin_data(block_data);
-
+				printf("succesfully extract_origin_data once\n");
 				decd_block = result.data;
 				_size      = result.data_size;
 			}
@@ -81,12 +82,16 @@ decoder_td_func(int id_core, int id_path, Data_Manager &data_manager) {
 				decd_block=(VData_Type *)decode(block_data->data, block_data->erasure,
 												block_data->S_FEC, block_data->K_FEC,
 												block_data->M_FEC);
+				printf("succesfully decode once\n");
+//				assert(block_data->originBlk_size == block_data->S_FEC * block_data->K_FEC);
+				_size = block_data->originBlk_size;
 			}
 
 			shared_ptr<Block_Decd> block_decd = (shared_ptr<struct Block_Decd>) \
 												new(struct Block_Decd);
 			encaps_decdBlk(block_decd, block_data, decd_block, _size);
-
+			data_manager.decdQ_data[id_path].push(block_decd);
+			printf("succesfully push a decd block into decQ_data once\n");
 			BLOCK_FREE(block_data);
 		}
 	}
@@ -121,15 +126,18 @@ extract_origin_data(shared_ptr<struct Block_Data> block_data) {
 		}
 		else{
 			if((loc+block_data->S_FEC) < block_data->originBlk_size) {
+//			if((loc+block_data->S_FEC) <= block_data->cnt_s*block_data->S_FEC){
 				if(GET == block_data->erasure[i]) {
+//					printf("the k = %d\n", k);
+//					printf("");
 					memcpy(&(data[(k-code_pkt)*(block_data->S_FEC)]), \
 						   block_data->data[k], block_data->S_FEC);
 					k++;
-					loc += block_data->S_FEC;
 				}
 			}
 			else {
 				int _len = block_data->originBlk_size - loc;
+//				int _len = block_data->cnt_s*block_data->S_FEC - loc;
 				if(GET == block_data->erasure[i]) {
 					memcpy(&(data[(k-code_pkt)*(block_data->S_FEC)]), \
 						   block_data->data[k], _len);
@@ -137,6 +145,7 @@ extract_origin_data(shared_ptr<struct Block_Data> block_data) {
 					break;					
 				}
 			}
+			loc += block_data->S_FEC;
 		}
 	}
 //get the addr of remaining origin data.

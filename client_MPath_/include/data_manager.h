@@ -59,6 +59,8 @@ struct Block_Data{
 	int *erasure;
 	int cnt_s;
 
+//	int cnt_codeSym;
+//	int cnt_dataSym;
 //	int size;
 	int id_path;
 	int id_nalu;

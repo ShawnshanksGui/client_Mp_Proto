@@ -1,8 +1,8 @@
 
 class Timer {
 public:
-	int num_timeSlice;
-	int len_timeSlice;
+	double num_timeSlice;
+	double len_timeSlice;
 
 	Timer();
 

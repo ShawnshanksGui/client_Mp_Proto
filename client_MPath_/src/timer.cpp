@@ -33,7 +33,11 @@ extern int Terminal_WriterThds;
 //             the processes; 
 //==========================================================================
 void Timer::setTimer_td_func() {
-	usleep(len_timeSlice * len_timeSlice * 1000000);
+	usleep((int)(num_timeSlice * len_timeSlice * 1000000));
+//	usleep(0.01* 1000000);
 	Terminal_AllThds = YES;
+//	usleep(50000);
+//	Terminal_DecdThds = YES;
+//	Terminal_WriterThds = YES;
 }
 //==========================================================================
